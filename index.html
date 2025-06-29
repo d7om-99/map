@@ -208,15 +208,24 @@
   renderMoments();
 
   let pressTimer;
-  map.on('mousedown', function(e) {
+
+  function startPress(e) {
+    e.preventDefault();
     pressTimer = setTimeout(() => {
-      tempLatLng = e.latlng;
+      tempLatLng = map.mouseEventToLatLng(e.touches ? e.touches[0] : e);
       document.getElementById('momentForm').style.display = 'flex';
     }, 800);
-  });
-  map.on('mouseup', function() {
+  }
+
+  function cancelPress() {
     clearTimeout(pressTimer);
-  });
+  }
+
+  map.on('mousedown', startPress);
+  map.on('mouseup', cancelPress);
+  map.on('touchstart', startPress);
+  map.on('touchend', cancelPress);
+  map.on('touchmove', cancelPress);
 
   document.getElementById('momentForm').addEventListener('submit', function(e) {
     e.preventDefault();
