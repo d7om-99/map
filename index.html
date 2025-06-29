@@ -3,12 +3,15 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Memory Map - Interactive Moments</title>
+<title>Memory Map - Interactive Moments & Challenges</title>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 <style>
+  html, body {
+    height: 100%;
+    margin: 0; padding: 0;
+  }
   body {
     font-family: Arial, sans-serif;
-    margin: 0; padding: 0;
     background: #121212;
     color: #eee;
     display: flex;
@@ -46,14 +49,23 @@
     color: #00bfa5;
     text-align: center;
   }
-  #momentsList {
+  #searchBar {
+    margin-bottom: 10px;
+    padding: 6px 8px;
+    border-radius: 6px;
+    border: none;
+    width: 100%;
+    background: #333;
+    color: #eee;
+  }
+  #momentsList, #challengesList {
     list-style: none;
     padding: 0;
-    margin: 0;
+    margin: 0 0 15px 0;
     flex-grow: 1;
     overflow-y: auto;
   }
-  #momentsList li {
+  #momentsList li, #challengesList li {
     background: #333;
     margin-bottom: 10px;
     padding: 10px;
@@ -62,15 +74,19 @@
     display: flex;
     flex-direction: column;
   }
-  .moment-title {
+  .moment-title, .challenge-title {
     font-weight: bold;
   }
-  .moment-meta {
+  .moment-meta, .challenge-meta {
     font-size: 0.85rem;
     color: #bbb;
     margin: 5px 0;
   }
-  .moment-actions {
+  .moment-date, .challenge-date {
+    font-size: 0.75rem;
+    color: #888;
+  }
+  .moment-actions, .challenge-actions {
     display: flex;
     gap: 5px;
     flex-wrap: wrap;
@@ -89,7 +105,7 @@
   .btn-small:hover {
     background: #008f7a;
   }
-  #momentForm {
+  #momentForm, #challengeForm {
     display: none;
     flex-direction: column;
     background: #333;
@@ -97,15 +113,19 @@
     border-radius: 8px;
     margin-top: 10px;
   }
-  #momentForm input, #momentForm textarea {
+  #momentForm input, #momentForm textarea,
+  #challengeForm input, #challengeForm textarea {
     margin-bottom: 10px;
     padding: 8px;
     border-radius: 6px;
     border: none;
     width: 100%;
+    color: #eee;
+    background: #555;
   }
-  .moment-media {
-    margin-top: 10px;
+  #momentForm input::placeholder, #momentForm textarea::placeholder,
+  #challengeForm input::placeholder, #challengeForm textarea::placeholder {
+    color: #ccc;
   }
   .moment-media img, .moment-media video {
     max-width: 100%;
@@ -113,44 +133,133 @@
     border-radius: 8px;
     margin-top: 5px;
   }
-  .moment-comments {
+  .moment-comments, .challenge-comments {
     margin-top: 10px;
     font-size: 0.85rem;
     color: #ccc;
   }
+  .comment-date {
+    font-size: 0.7rem;
+    color: #666;
+  }
+  #tabs {
+    display: flex;
+    margin-bottom: 10px;
+  }
+  #tabs button {
+    flex: 1;
+    padding: 8px;
+    background: #444;
+    border: none;
+    color: #eee;
+    cursor: pointer;
+    font-weight: bold;
+    border-radius: 6px 6px 0 0;
+  }
+  #tabs button.active {
+    background: #00bfa5;
+    color: #000;
+  }
+  #contentMoments, #contentChallenges {
+    flex-grow: 1;
+    overflow-y: auto;
+  }
 </style>
 </head>
 <body>
-<header>Memory Map - Interactive Moments</header>
+<header>Memory Map - Interactive Moments & Challenges</header>
 <div id="container">
   <div id="map"></div>
   <aside id="sidePanel">
-    <h2>Moments</h2>
-    <ul id="momentsList"></ul>
-    <form id="momentForm">
-      <input type="text" id="title" placeholder="Title" required />
-      <textarea id="description" placeholder="Description"></textarea>
-      <input type="file" id="media" accept="image/*,video/*" multiple />
-      <button type="submit" class="btn-small">Save Moment</button>
-    </form>
+    <div id="tabs">
+      <button id="tabMoments" class="active" onclick="showTab('moments')">Moments</button>
+      <button id="tabChallenges" onclick="showTab('challenges')">Challenges</button>
+    </div>
+    <input id="searchBar" type="text" placeholder="Search by title, date, or series (YYYY-MM-DD)" oninput="searchAll()" />
+    
+    <div id="contentMoments">
+      <button onclick="showRandomMoment()" class="btn-small">🔀 Random Moment</button>
+      <button onclick="showDailyChallenge()" class="btn-small">📅 Daily Challenge</button>
+      <ul id="momentsList"></ul>
+      <form id="momentForm">
+        <input type="text" id="title" placeholder="Title" required autocomplete="off"/>
+        <textarea id="description" placeholder="Description" autocomplete="off"></textarea>
+        <input type="text" id="series" placeholder="Series (optional)" autocomplete="off" />
+        <input type="file" id="media" accept="image/*,video/*" multiple />
+        <button type="submit" class="btn-small">Save Moment</button>
+      </form>
+    </div>
+
+    <div id="contentChallenges" style="display:none;">
+      <button onclick="showRandomChallenge()" class="btn-small">🔀 Random Challenge</button>
+      <button onclick="addChallengeForm()" class="btn-small">➕ Add Challenge</button>
+      <ul id="challengesList"></ul>
+      <form id="challengeForm">
+        <input type="text" id="challengeTitle" placeholder="Challenge Title" required autocomplete="off"/>
+        <textarea id="challengeDescription" placeholder="Challenge Description" autocomplete="off"></textarea>
+        <input type="text" id="challengeLocation" placeholder="Location Name (optional)" autocomplete="off" />
+        <input type="file" id="challengeMedia" accept="image/*,video/*" multiple />
+        <button type="submit" class="btn-small">Save Challenge</button>
+      </form>
+    </div>
   </aside>
 </div>
+
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
+  // الخريطة والإعدادات
   const map = L.map('map').setView([21.3891, 39.8579], 13);
   L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
     maxZoom: 19,
     attribution: '© OpenStreetMap contributors'
   }).addTo(map);
 
+  // بيانات
   let moments = JSON.parse(localStorage.getItem('memoryMapMoments') || '[]');
+  let challenges = JSON.parse(localStorage.getItem('memoryMapChallenges') || '[]');
+  let markers = [];
   let tempLatLng = null;
+  let tempChallengeLatLng = null;
 
-  function renderMoments() {
+  // إنشاء ماركر ونافذة منبثقة مع عداد المشاهدات
+  function createMarker(item, type = 'moment') {
+    const marker = L.marker([item.lat, item.lng]).addTo(map);
+    let popupContent = `<b>${item.title || item.challengeTitle}</b><br>${item.description || item.challengeDescription || ''}`;
+    if(type === 'moment' && item.series) {
+      popupContent += `<br><small>Series: ${item.series}</small>`;
+    }
+    if(type === 'challenge' && item.location) {
+      popupContent += `<br><small>Location: ${item.location}</small>`;
+    }
+    marker.bindPopup(popupContent);
+    marker.on('click', () => {
+      if(type === 'moment') {
+        item.views = (item.views || 0) + 1;
+        saveMoments();
+        renderMoments();
+      } else if(type === 'challenge') {
+        item.views = (item.views || 0) + 1;
+        saveChallenges();
+        renderChallenges();
+      }
+    });
+    markers.push(marker);
+  }
+
+  // تهيئة كل الماركرات
+  function initMarkers() {
+    markers.forEach(m => map.removeLayer(m));
+    markers = [];
+    moments.forEach(m => createMarker(m, 'moment'));
+    challenges.forEach(c => createMarker(c, 'challenge'));
+  }
+
+  // عرض اللحظات (أو فلتر معين)
+  function renderMoments(filtered = null) {
     const list = document.getElementById('momentsList');
     list.innerHTML = '';
-    moments.forEach((moment, i) => {
-      const item = document.createElement('li');
+    let data = filtered || moments;
+    data.forEach((moment, i) => {
       let mediaHtml = '';
       if (moment.media && moment.media.length) {
         const media = moment.media[0];
@@ -160,92 +269,282 @@
           mediaHtml = `<video controls src="${media.data}"></video>`;
         }
       }
-      const commentsHtml = moment.comments?.map(c => `<div>• ${c}</div>`).join('') || '';
+      const commentsHtml = moment.comments?.map(c =>
+        `<div>• ${c.text} <span class="comment-date">(${c.date})</span></div>`
+      ).join('') || '';
+      const item = document.createElement('li');
       item.innerHTML = `
         <div class="moment-title">${moment.title}</div>
         <div class="moment-meta">
-          Date: ${new Date(moment.createdAt).toLocaleString()}<br>
+          Date: ${moment.date || new Date(moment.createdAt).toLocaleString()}<br>
           Views: ${moment.views || 0} | Likes: ${moment.likes || 0} | Comments: ${moment.comments?.length || 0}
         </div>
         <div class="moment-media">${mediaHtml}</div>
         <div class="moment-comments">${commentsHtml}</div>
         <div class="moment-actions">
-          <button class="btn-small" onclick="likeMoment(${i})">Like</button>
-          <button class="btn-small" onclick="commentMoment(${i})">Comment</button>
+          <button class="btn-small" onclick="likeMoment(${moment.id})">Like</button>
+          <button class="btn-small" onclick="commentMoment(${moment.id})">Comment</button>
+          <button class="btn-small" onclick="showSeries('${moment.series}')" ${!moment.series ? 'disabled' : ''}>Show Series</button>
         </div>
       `;
       list.appendChild(item);
-      L.marker([moment.lat, moment.lng])
-        .addTo(map)
-        .bindPopup(`<b>${moment.title}</b><br>${moment.description || ''}`)
-        .on('click', () => {
-          moments[i].views = (moments[i].views || 0) + 1;
-          saveMoments();
-          renderMoments();
-        });
     });
   }
 
-  function likeMoment(i) {
-    moments[i].likes = (moments[i].likes || 0) + 1;
+  // عرض التحديات (أو فلتر معين)
+  function renderChallenges(filtered = null) {
+    const list = document.getElementById('challengesList');
+    list.innerHTML = '';
+    let data = filtered || challenges;
+    data.forEach((challenge, i) => {
+      let mediaHtml = '';
+      if (challenge.media && challenge.media.length) {
+        const media = challenge.media[0];
+        if (media.type.startsWith('image/')) {
+          mediaHtml = `<img src="${media.data}" alt="Image" />`;
+        } else if (media.type.startsWith('video/')) {
+          mediaHtml = `<video controls src="${media.data}"></video>`;
+        }
+      }
+      const commentsHtml = challenge.comments?.map(c =>
+        `<div>• ${c.text} <span class="comment-date">(${c.date})</span></div>`
+      ).join('') || '';
+      const item = document.createElement('li');
+      item.innerHTML = `
+        <div class="challenge-title">${challenge.challengeTitle}</div>
+        <div class="challenge-meta">
+          Date: ${challenge.date || new Date(challenge.createdAt).toLocaleString()}<br>
+          Views: ${challenge.views || 0} | Likes: ${challenge.likes || 0} | Comments: ${challenge.comments?.length || 0}
+        </div>
+        <div class="challenge-media">${mediaHtml}</div>
+        <div class="challenge-comments">${commentsHtml}</div>
+        <div class="challenge-actions">
+          <button class="btn-small" onclick="likeChallenge(${challenge.id})">Like</button>
+          <button class="btn-small" onclick="commentChallenge(${challenge.id})">Comment</button>
+        </div>
+      `;
+      list.appendChild(item);
+    });
+  }
+
+  // الإعجاب بالذكرى
+  function likeMoment(id) {
+    const moment = moments.find(m => m.id === id);
+    if (!moment) return;
+    moment.likes = (moment.likes || 0) + 1;
     saveMoments();
     renderMoments();
   }
-
-  function commentMoment(i) {
+  // التعليق على الذكرى
+  function commentMoment(id) {
+    const moment = moments.find(m => m.id === id);
+    if (!moment) return;
     const text = prompt("Write your comment:");
     if (text) {
-      if (!moments[i].comments) moments[i].comments = [];
-      moments[i].comments.push(`${text} (${new Date().toLocaleString()})`);
+      if (!moment.comments) moment.comments = [];
+      moment.comments.push({ text, date: new Date().toLocaleString() });
       saveMoments();
       renderMoments();
     }
   }
 
+  // إعجاب بالتحدي
+  function likeChallenge(id) {
+    const challenge = challenges.find(c => c.id === id);
+    if (!challenge) return;
+    challenge.likes = (challenge.likes || 0) + 1;
+    saveChallenges();
+    renderChallenges();
+  }
+  // تعليق على التحدي
+  function commentChallenge(id) {
+    const challenge = challenges.find(c => c.id === id);
+    if (!challenge) return;
+    const text = prompt("Write your comment:");
+    if (text) {
+      if (!challenge.comments) challenge.comments = [];
+      challenge.comments.push({ text, date: new Date().toLocaleString() });
+      saveChallenges();
+      renderChallenges();
+    }
+  }
+
+  // حفظ الذكريات
   function saveMoments() {
     localStorage.setItem('memoryMapMoments', JSON.stringify(moments));
   }
+  // حفظ التحديات
+  function saveChallenges() {
+    localStorage.setItem('memoryMapChallenges', JSON.stringify(challenges));
+  }
 
-  renderMoments();
+  // توليد رقم معرف عشوائي
+  function generateId() {
+    return Math.floor(Math.random() * 1000000);
+  }
 
-  // تفعيل إضافة الذكرى بنقرة مزدوجة
-  map.on('dblclick', function(e) {
-    tempLatLng = e.latlng;
-    document.getElementById('momentForm').style.display = 'flex';
-  });
+  // عرض سلسلة الذكريات
+  function showSeries(seriesName) {
+    if (!seriesName) return;
+    const filtered = moments.filter(m => m.series === seriesName);
+    if (filtered.length === 0) {
+      alert('No moments in this series.');
+      return;
+    }
+    renderMoments(filtered);
+  }
 
-  document.getElementById('momentForm').addEventListener('submit', function(e) {
+  // البحث في الذكريات والتحديات معًا
+  function searchAll() {
+    const query = document.getElementById('searchBar').value.trim().toLowerCase();
+    if (!query) {
+      renderMoments();
+      renderChallenges();
+      return;
+    }
+    // فلترة الذكريات
+    const filteredMoments = moments.filter(m =>
+      (m.title && m.title.toLowerCase().includes(query)) ||
+      (m.date && m.date.includes(query)) ||
+      (m.series && m.series.toLowerCase().includes(query))
+    );
+    renderMoments(filteredMoments);
+    // فلترة التحديات
+    const filteredChallenges = challenges.filter(c =>
+      (c.challengeTitle && c.challengeTitle.toLowerCase().includes(query)) ||
+      (c.date && c.date.includes(query)) ||
+      (c.location && c.location.toLowerCase().includes(query))
+    );
+    renderChallenges(filteredChallenges);
+  }
+
+  // إظهار ذكرى عشوائية
+  function showRandomMoment() {
+    if (moments.length === 0) return alert('No moments available.');
+    const index = Math.floor(Math.random() * moments.length);
+    const moment = moments[index];
+    map.setView([moment.lat, moment.lng], 15);
+    const marker = markers.find(m => {
+      const latLng = m.getLatLng();
+      return latLng.lat === moment.lat && latLng.lng === moment.lng;
+    });
+    if (marker) marker.openPopup();
+  }
+  // إظهار تحدي عشوائي
+  function showRandomChallenge() {
+    if (challenges.length === 0) return alert('No challenges available.');
+    const index = Math.floor(Math.random() * challenges.length);
+    const challenge = challenges[index];
+    map.setView([challenge.lat, challenge.lng], 15);
+    const marker = markers.find(m => {
+      const latLng = m.getLatLng();
+      return latLng.lat === challenge.lat && latLng.lng === challenge.lng;
+    });
+    if (marker) marker.openPopup();
+  }
+
+  // تحدي يومي يتغير كل 3 أيام
+  const dailyChallenges = [
+    "شارك صورة لمكانك الحالي",
+    "اكتب شعورك تجاه السماء اليوم",
+    "شارك صورة لأشيائك المفضلة",
+    "اكتب قصة قصيرة عن رحلتك الأخيرة",
+    "شارك صورة غروب الشمس",
+    "اكتب عن لحظة لا تُنسى",
+  ];
+  function showDailyChallenge() {
+    const startDate = new Date("2025-01-01");
+    const now = new Date();
+    const diffDays = Math.floor((now - startDate) / (1000*60*60*24));
+    const index = diffDays % dailyChallenges.length;
+    alert("تحدي اللحظة اليوم: " + dailyChallenges[index]);
+  }
+
+  // تبديل التبويبات بين اللحظات والتحديات
+  function showTab(tab) {
+    document.getElementById('contentMoments').style.display = tab === 'moments' ? 'block' : 'none';
+    document.getElementById('contentChallenges').style.display = tab === 'challenges' ? 'block' : 'none';
+    document.getElementById('tabMoments').classList.toggle('active', tab === 'moments');
+    document.getElementById('tabChallenges').classList.toggle('active', tab === 'challenges');
+    searchAll();
+  }
+
+  // فورم إضافة تحدي جديد
+  function addChallengeForm() {
+    const form = document.getElementById('challengeForm');
+    form.style.display = form.style.display === 'flex' ? 'none' : 'flex';
+  }
+
+  // حفظ تحدي جديد
+  document.getElementById('challengeForm').addEventListener('submit', function(e) {
     e.preventDefault();
-    const title = document.getElementById('title').value;
-    const description = document.getElementById('description').value;
-    const files = document.getElementById('media').files;
+    const title = document.getElementById('challengeTitle').value.trim();
+    if (!title) {
+      alert('Please enter a challenge title.');
+      return;
+    }
+    const description = document.getElementById('challengeDescription').value.trim();
+    const locationName = document.getElementById('challengeLocation').value.trim();
+    const files = document.getElementById('challengeMedia').files;
+
+    if (!tempChallengeLatLng) {
+      alert('Please double-click on the map to choose challenge location.');
+      return;
+    }
+
     const readerPromises = Array.from(files).map(file => {
       return new Promise(resolve => {
         const reader = new FileReader();
-        reader.onload = () => {
-          resolve({ type: file.type, data: reader.result });
-        };
+        reader.onload = () => resolve({ type: file.type, data: reader.result });
         reader.readAsDataURL(file);
       });
     });
+
     Promise.all(readerPromises).then(media => {
-      moments.push({
-        title,
-        description,
-        lat: tempLatLng.lat,
-        lng: tempLatLng.lng,
+      const newChallenge = {
+        id: generateId(),
+        challengeTitle: title,
+        challengeDescription: description,
+        location: locationName || null,
+        lat: tempChallengeLatLng.lat,
+        lng: tempChallengeLatLng.lng,
         media,
         views: 0,
         likes: 0,
         comments: [],
-        createdAt: new Date().toISOString()
-      });
-      saveMoments();
-      renderMoments();
+        createdAt: new Date().toISOString(),
+        date: new Date().toLocaleString()
+      };
+      challenges.push(newChallenge);
+      saveChallenges();
+
+      createMarker(newChallenge, 'challenge');
+      renderChallenges();
+
       this.reset();
       this.style.display = 'none';
+      tempChallengeLatLng = null;
+      alert('Challenge saved!');
     });
   });
+
+  // عند الضغط المزدوج على الخريطة لتحديد موقع إضافة ذكرى أو تحدي
+  map.on('dblclick', function(e) {
+    if(document.getElementById('contentMoments').style.display === 'block') {
+      tempLatLng = e.latlng;
+      document.getElementById('momentForm').style.display = 'flex';
+    } else {
+      tempChallengeLatLng = e.latlng;
+      alert('Location for new challenge selected. Now fill the challenge form and save.');
+    }
+  });
+
+  // بدء التطبيق
+  initMarkers();
+  renderMoments();
+  renderChallenges();
+  showTab('moments'); // عرض التبويب الافتراضي
+
 </script>
 </body>
 </html>
