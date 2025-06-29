@@ -164,6 +164,7 @@
       item.innerHTML = `
         <div class="moment-title">${moment.title}</div>
         <div class="moment-meta">
+          Date: ${new Date(moment.createdAt).toLocaleString()}<br>
           Views: ${moment.views || 0} | Likes: ${moment.likes || 0} | Comments: ${moment.comments?.length || 0}
         </div>
         <div class="moment-media">${mediaHtml}</div>
@@ -195,7 +196,7 @@
     const text = prompt("Write your comment:");
     if (text) {
       if (!moments[i].comments) moments[i].comments = [];
-      moments[i].comments.push(text);
+      moments[i].comments.push(`${text} (${new Date().toLocaleString()})`);
       saveMoments();
       renderMoments();
     }
@@ -207,13 +208,12 @@
 
   renderMoments();
 
-  // حذف دعم الضغط المطول ونستخدم نقرة مزدوجة
+  // تفعيل إضافة الذكرى بنقرة مزدوجة
   map.on('dblclick', function(e) {
-    tempLatLng = e.latlng;  // حفظ الإحداثيات
-    document.getElementById('momentForm').style.display = 'flex';  // إظهار الفورم
+    tempLatLng = e.latlng;
+    document.getElementById('momentForm').style.display = 'flex';
   });
 
-  // عند إرسال الفورم
   document.getElementById('momentForm').addEventListener('submit', function(e) {
     e.preventDefault();
     const title = document.getElementById('title').value;
@@ -237,7 +237,8 @@
         media,
         views: 0,
         likes: 0,
-        comments: []
+        comments: [],
+        createdAt: new Date().toISOString()
       });
       saveMoments();
       renderMoments();
