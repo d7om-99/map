@@ -6,7 +6,6 @@
 <title>Memory Map - Interactive Moments</title>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 <style>
-  /* (تم الاحتفاظ بجميع التنسيقات الأصلية) */
   body {
     font-family: Arial, sans-serif;
     margin: 0; padding: 0;
@@ -90,6 +89,35 @@
   .btn-small:hover {
     background: #008f7a;
   }
+  #momentForm {
+    display: none;
+    flex-direction: column;
+    background: #333;
+    padding: 15px;
+    border-radius: 8px;
+    margin-top: 10px;
+  }
+  #momentForm input, #momentForm textarea {
+    margin-bottom: 10px;
+    padding: 8px;
+    border-radius: 6px;
+    border: none;
+    width: 100%;
+  }
+  .moment-media {
+    margin-top: 10px;
+  }
+  .moment-media img, .moment-media video {
+    max-width: 100%;
+    max-height: 150px;
+    border-radius: 8px;
+    margin-top: 5px;
+  }
+  .moment-comments {
+    margin-top: 10px;
+    font-size: 0.85rem;
+    color: #ccc;
+  }
 </style>
 </head>
 <body>
@@ -99,6 +127,12 @@
   <aside id="sidePanel">
     <h2>Moments</h2>
     <ul id="momentsList"></ul>
+    <form id="momentForm">
+      <input type="text" id="title" placeholder="Title" required />
+      <textarea id="description" placeholder="Description"></textarea>
+      <input type="file" id="media" accept="image/*,video/*" multiple />
+      <button type="submit" class="btn-small">Save Moment</button>
+    </form>
   </aside>
 </div>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
@@ -110,17 +144,30 @@
   }).addTo(map);
 
   let moments = JSON.parse(localStorage.getItem('memoryMapMoments') || '[]');
+  let tempLatLng = null;
 
   function renderMoments() {
     const list = document.getElementById('momentsList');
     list.innerHTML = '';
     moments.forEach((moment, i) => {
       const item = document.createElement('li');
+      let mediaHtml = '';
+      if (moment.media && moment.media.length) {
+        const media = moment.media[0];
+        if (media.type.startsWith('image/')) {
+          mediaHtml = `<img src="${media.data}" alt="Image" />`;
+        } else if (media.type.startsWith('video/')) {
+          mediaHtml = `<video controls src="${media.data}"></video>`;
+        }
+      }
+      const commentsHtml = moment.comments?.map(c => `<div>• ${c}</div>`).join('') || '';
       item.innerHTML = `
         <div class="moment-title">${moment.title}</div>
         <div class="moment-meta">
           Views: ${moment.views || 0} | Likes: ${moment.likes || 0} | Comments: ${moment.comments?.length || 0}
         </div>
+        <div class="moment-media">${mediaHtml}</div>
+        <div class="moment-comments">${commentsHtml}</div>
         <div class="moment-actions">
           <button class="btn-small" onclick="likeMoment(${i})">Like</button>
           <button class="btn-small" onclick="commentMoment(${i})">Comment</button>
@@ -159,6 +206,49 @@
   }
 
   renderMoments();
+
+  let pressTimer;
+  map.on('mousedown', function(e) {
+    pressTimer = setTimeout(() => {
+      tempLatLng = e.latlng;
+      document.getElementById('momentForm').style.display = 'flex';
+    }, 800);
+  });
+  map.on('mouseup', function() {
+    clearTimeout(pressTimer);
+  });
+
+  document.getElementById('momentForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    const title = document.getElementById('title').value;
+    const description = document.getElementById('description').value;
+    const files = document.getElementById('media').files;
+    const readerPromises = Array.from(files).map(file => {
+      return new Promise(resolve => {
+        const reader = new FileReader();
+        reader.onload = () => {
+          resolve({ type: file.type, data: reader.result });
+        };
+        reader.readAsDataURL(file);
+      });
+    });
+    Promise.all(readerPromises).then(media => {
+      moments.push({
+        title,
+        description,
+        lat: tempLatLng.lat,
+        lng: tempLatLng.lng,
+        media,
+        views: 0,
+        likes: 0,
+        comments: []
+      });
+      saveMoments();
+      renderMoments();
+      document.getElementById('momentForm').reset();
+      document.getElementById('momentForm').style.display = 'none';
+    });
+  });
 </script>
 </body>
 </html>
