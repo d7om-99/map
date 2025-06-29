@@ -207,26 +207,13 @@
 
   renderMoments();
 
-  let pressTimer;
+  // حذف دعم الضغط المطول ونستخدم نقرة مزدوجة
+  map.on('dblclick', function(e) {
+    tempLatLng = e.latlng;  // حفظ الإحداثيات
+    document.getElementById('momentForm').style.display = 'flex';  // إظهار الفورم
+  });
 
-  function startPress(e) {
-    e.preventDefault();
-    pressTimer = setTimeout(() => {
-      tempLatLng = map.mouseEventToLatLng(e.touches ? e.touches[0] : e);
-      document.getElementById('momentForm').style.display = 'flex';
-    }, 800);
-  }
-
-  function cancelPress() {
-    clearTimeout(pressTimer);
-  }
-
-  map.on('mousedown', startPress);
-  map.on('mouseup', cancelPress);
-  map.on('touchstart', startPress);
-  map.on('touchend', cancelPress);
-  map.on('touchmove', cancelPress);
-
+  // عند إرسال الفورم
   document.getElementById('momentForm').addEventListener('submit', function(e) {
     e.preventDefault();
     const title = document.getElementById('title').value;
@@ -254,8 +241,8 @@
       });
       saveMoments();
       renderMoments();
-      document.getElementById('momentForm').reset();
-      document.getElementById('momentForm').style.display = 'none';
+      this.reset();
+      this.style.display = 'none';
     });
   });
 </script>
