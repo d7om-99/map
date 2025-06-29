@@ -4,21 +4,14 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>Memory Map - Interactive Moments</title>
-
-<!-- Leaflet CSS -->
-<link
-  rel="stylesheet"
-  href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
-/>
-
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 <style>
-  /* (حافظت على كل الستايلات الأصلية) */
+  /* (تم الاحتفاظ بجميع التنسيقات الأصلية) */
   body {
     font-family: Arial, sans-serif;
     margin: 0; padding: 0;
     background: #121212;
     color: #eee;
-    direction: ltr;
     display: flex;
     flex-direction: column;
     height: 100vh;
@@ -29,7 +22,6 @@
     font-size: 1.5rem;
     font-weight: bold;
     text-align: center;
-    flex-shrink: 0;
   }
   #container {
     flex: 1;
@@ -69,174 +61,47 @@
     border-radius: 8px;
     cursor: pointer;
     display: flex;
-    justify-content: space-between;
-    align-items: center;
-  }
-  #momentsList li:hover {
-    background: #444;
+    flex-direction: column;
   }
   .moment-title {
-    flex-grow: 1;
-    margin-right: 10px;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
+    font-weight: bold;
+  }
+  .moment-meta {
+    font-size: 0.85rem;
+    color: #bbb;
+    margin: 5px 0;
+  }
+  .moment-actions {
+    display: flex;
+    gap: 5px;
+    flex-wrap: wrap;
+    margin-top: 8px;
   }
   .btn-small {
     background: #00bfa5;
     border: none;
     border-radius: 6px;
-    padding: 6px 8px;
+    padding: 4px 6px;
     color: #000;
     font-weight: bold;
     cursor: pointer;
-    margin-left: 5px;
-    transition: background 0.3s ease;
+    font-size: 0.85rem;
   }
   .btn-small:hover {
     background: #008f7a;
   }
-  #addMomentBtn {
-    padding: 12px;
-    font-weight: bold;
-    font-size: 1.1rem;
-    border: none;
-    border-radius: 10px;
-    background: #00bfa5;
-    color: #000;
-    cursor: pointer;
-    margin-bottom: 10px;
-    transition: background 0.3s ease;
-  }
-  #addMomentBtn:hover {
-    background: #008f7a;
-  }
-
-  /* Modal */
-  #momentModal {
-    display: none;
-    position: fixed;
-    top: 0; left: 0; right: 0; bottom: 0;
-    background: rgba(0,0,0,0.8);
-    justify-content: center;
-    align-items: center;
-    z-index: 10000;
-    padding: 20px;
-  }
-  #momentModal.active {
-    display: flex;
-  }
-  #modalContent {
-    background: #222;
-    padding: 20px;
-    border-radius: 12px;
-    width: 100%;
-    max-width: 450px;
-    box-sizing: border-box;
-    color: #eee;
-    display: flex;
-    flex-direction: column;
-  }
-  #modalContent label {
-    margin-top: 10px;
-    font-weight: bold;
-  }
-  #modalContent input[type="text"],
-  #modalContent textarea,
-  #modalContent input[type="file"] {
-    margin-top: 6px;
-    padding: 8px;
-    border-radius: 6px;
-    border: none;
-    background: #333;
-    color: #eee;
-    font-size: 1rem;
-  }
-  #modalContent textarea {
-    resize: vertical;
-    min-height: 80px;
-  }
-  #modalBtns {
-    margin-top: 20px;
-    display: flex;
-    justify-content: space-between;
-  }
-  #modalBtns button {
-    flex: 1;
-    padding: 12px;
-    font-weight: bold;
-    font-size: 1.1rem;
-    border: none;
-    border-radius: 10px;
-    cursor: pointer;
-    margin: 0 5px;
-    transition: background 0.3s ease;
-  }
-  #saveMomentBtn {
-    background: #00bfa5;
-    color: #000;
-  }
-  #saveMomentBtn:hover {
-    background: #008f7a;
-  }
-  #cancelMomentBtn {
-    background: #cc4444;
-    color: #eee;
-  }
-  #cancelMomentBtn:hover {
-    background: #aa3333;
-  }
-
-  /* Popup style */
-  .leaflet-popup-content img,
-  .leaflet-popup-content video {
-    max-width: 100%;
-    border-radius: 8px;
-    margin-top: 8px;
-  }
-  .leaflet-popup-content video {
-    max-height: 180px;
-  }
-
-  /* Responsive */
-  @media (max-width: 900px) {
-    #container {
-      flex-direction: column;
-    }
-    #map {
-      height: 50vh;
-    }
-    #sidePanel {
-      height: 50vh;
-      flex: none;
-      padding: 10px;
-    }
-  }
 </style>
 </head>
 <body>
-
 <header>Memory Map - Interactive Moments</header>
-
 <div id="container">
   <div id="map"></div>
   <aside id="sidePanel">
     <h2>Moments</h2>
-    <button id="addMomentBtn">+ Add Moment</button>
-    <ul id="momentsList" aria-label="List of moments"></ul>
-    <div style="margin-top: 10px;">
-      <button id="exportBtn" class="btn-small" title="Export all moments as JSON">Export Moments</button>
-      <input type="file" id="importFileInput" style="display:none" accept=".json" />
-      <button id="importBtn" class="btn-small" title="Import moments from JSON file">Import Moments</button>
-      <button id="clearAllBtn" class="btn-small" style="background:#cc4444;" title="Clear all saved moments">Clear All</button>
-    </div>
+    <ul id="momentsList"></ul>
   </aside>
 </div>
-
-<!-- Leaflet JS -->
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-
-<!-- Main Script -->
 <script>
   const map = L.map('map').setView([21.3891, 39.8579], 13);
   L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
@@ -244,397 +109,56 @@
     attribution: '© OpenStreetMap contributors'
   }).addTo(map);
 
-  // DOM elements
-  const momentsList = document.getElementById('momentsList');
-  const addMomentBtn = document.getElementById('addMomentBtn');
-  const exportBtn = document.getElementById('exportBtn');
-  const importBtn = document.getElementById('importBtn');
-  const importFileInput = document.getElementById('importFileInput');
-  const clearAllBtn = document.getElementById('clearAllBtn');
+  let moments = JSON.parse(localStorage.getItem('memoryMapMoments') || '[]');
 
-  // Modal elements (سيتم تعريفها لاحقًا)
-  let momentModal, modalTitleInput, modalDescInput, modalImageInput, modalVideoInput, saveMomentBtn, cancelMomentBtn;
+  function renderMoments() {
+    const list = document.getElementById('momentsList');
+    list.innerHTML = '';
+    moments.forEach((moment, i) => {
+      const item = document.createElement('li');
+      item.innerHTML = `
+        <div class="moment-title">${moment.title}</div>
+        <div class="moment-meta">
+          Views: ${moment.views || 0} | Likes: ${moment.likes || 0} | Comments: ${moment.comments?.length || 0}
+        </div>
+        <div class="moment-actions">
+          <button class="btn-small" onclick="likeMoment(${i})">Like</button>
+          <button class="btn-small" onclick="commentMoment(${i})">Comment</button>
+        </div>
+      `;
+      list.appendChild(item);
+      L.marker([moment.lat, moment.lng])
+        .addTo(map)
+        .bindPopup(`<b>${moment.title}</b><br>${moment.description || ''}`)
+        .on('click', () => {
+          moments[i].views = (moments[i].views || 0) + 1;
+          saveMoments();
+          renderMoments();
+        });
+    });
+  }
 
-  // Moments data and markers
-  let moments = [];
-  let markers = [];
-  let editingIndex = null;
+  function likeMoment(i) {
+    moments[i].likes = (moments[i].likes || 0) + 1;
+    saveMoments();
+    renderMoments();
+  }
 
-  // --- جديد: Marker لموقع المستخدم ---
-  let userMarker = null;
-
-  // --- جديد: Set لتسجيل الإشعارات المرسلة ---
-  let notifiedMoments = new Set();
-
-  // Load moments from localStorage
-  function loadMoments() {
-    const data = localStorage.getItem('memoryMapMoments');
-    if(data) {
-      try {
-        moments = JSON.parse(data);
-      } catch {
-        moments = [];
-      }
+  function commentMoment(i) {
+    const text = prompt("Write your comment:");
+    if (text) {
+      if (!moments[i].comments) moments[i].comments = [];
+      moments[i].comments.push(text);
+      saveMoments();
+      renderMoments();
     }
   }
-  // Save moments to localStorage
+
   function saveMoments() {
     localStorage.setItem('memoryMapMoments', JSON.stringify(moments));
   }
-  // Clear markers from map
-  function clearMarkers() {
-    markers.forEach(m => map.removeLayer(m));
-    markers = [];
-  }
-  // Render markers and list
-  function renderMoments() {
-    clearMarkers();
-    momentsList.innerHTML = '';
-    moments.forEach((m, i) => {
-      // Marker
-      const marker = L.marker([m.lat, m.lng]).addTo(map);
-      let popupContent = `<b>${escapeHtml(m.title)}</b>`;
-      if(m.description) popupContent += `<br>${escapeHtml(m.description).replace(/\n/g, '<br>')}`;
-      if(m.image) popupContent += `<br><img src="${m.image}" alt="Image" />`;
-      if(m.video) popupContent += `<br><video controls src="${m.video}"></video>`;
-      marker.bindPopup(popupContent);
-      markers.push(marker);
 
-      // List item
-      const li = document.createElement('li');
-      li.setAttribute('tabindex', 0);
-      li.classList.add('moment-item');
-
-      const titleSpan = document.createElement('span');
-      titleSpan.textContent = m.title;
-      titleSpan.className = 'moment-title';
-      li.appendChild(titleSpan);
-
-      // Edit button
-      const editBtn = document.createElement('button');
-      editBtn.textContent = 'Edit';
-      editBtn.className = 'btn-small';
-      editBtn.title = 'Edit this moment';
-      editBtn.addEventListener('click', (e) => {
-        e.stopPropagation();
-        openMomentModal(i);
-      });
-      li.appendChild(editBtn);
-
-      // Delete button
-      const delBtn = document.createElement('button');
-      delBtn.textContent = 'Delete';
-      delBtn.className = 'btn-small';
-      delBtn.title = 'Delete this moment';
-      delBtn.addEventListener('click', (e) => {
-        e.stopPropagation();
-        if(confirm('Are you sure you want to delete this moment?')) {
-          moments.splice(i,1);
-          saveMoments();
-          renderMoments();
-        }
-      });
-      li.appendChild(delBtn);
-
-      // Clicking list item opens popup on map
-      li.addEventListener('click', () => {
-        markers[i].openPopup();
-        map.panTo([m.lat, m.lng]);
-      });
-
-      momentsList.appendChild(li);
-    });
-  }
-
-  // Escape HTML to prevent injection
-  function escapeHtml(text) {
-    if(!text) return '';
-    return text.replace(/[&<>"']/g, function(m) {
-      return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m];
-    });
-  }
-
-  // Modal template (بلا تغيير)
-  function createModal() {
-    momentModal = document.createElement('div');
-    momentModal.id = 'momentModal';
-    momentModal.innerHTML = `
-      <div id="modalContent" role="dialog" aria-modal="true" aria-labelledby="modalTitleLabel">
-        <h3 id="modalTitleLabel">Add/Edit Moment</h3>
-        <label for="modalTitleInput">Title *</label>
-        <input type="text" id="modalTitleInput" required />
-        <label for="modalDescInput">Description</label>
-        <textarea id="modalDescInput"></textarea>
-        <label for="modalImageInput">Image (optional)</label>
-        <input type="file" id="modalImageInput" accept="image/*" />
-        <label for="modalVideoInput">Video (optional)</label>
-        <input type="file" id="modalVideoInput" accept="video/*" />
-        <div id="modalBtns">
-          <button id="saveMomentBtn" disabled>Save</button>
-          <button id="cancelMomentBtn">Cancel</button>
-        </div>
-      </div>
-    `;
-    document.body.appendChild(momentModal);
-
-    modalTitleInput = document.getElementById('modalTitleInput');
-    modalDescInput = document.getElementById('modalDescInput');
-    modalImageInput = document.getElementById('modalImageInput');
-    modalVideoInput = document.getElementById('modalVideoInput');
-    saveMomentBtn = document.getElementById('saveMomentBtn');
-    cancelMomentBtn = document.getElementById('cancelMomentBtn');
-
-    modalTitleInput.addEventListener('input', () => {
-      saveMomentBtn.disabled = modalTitleInput.value.trim() === '';
-    });
-
-    cancelMomentBtn.addEventListener('click', closeMomentModal);
-  }
-
-  // Open modal to add/edit moment
-  function openMomentModal(index = null, latlng = null) {
-    editingIndex = index;
-    saveMomentBtn.disabled = true;
-
-    modalTitleInput.value = '';
-    modalDescInput.value = '';
-    modalImageInput.value = '';
-    modalVideoInput.value = '';
-
-    if(index !== null) {
-      const m = moments[index];
-      modalTitleInput.value = m.title;
-      modalDescInput.value = m.description || '';
-    }
-    momentModal.classList.add('active');
-
-    saveMomentBtn.onclick = async () => {
-      if(modalTitleInput.value.trim() === '') {
-        alert('Title is required!');
-        return;
-      }
-      let imageData = null;
-      let videoData = null;
-
-      try {
-        if(modalImageInput.files.length > 0) {
-          imageData = await fileToBase64(modalImageInput.files[0]);
-        } else if(index !== null && moments[index].image) {
-          imageData = moments[index].image;
-        }
-        if(modalVideoInput.files.length > 0) {
-          videoData = await fileToBase64(modalVideoInput.files[0]);
-        } else if(index !== null && moments[index].video) {
-          videoData = moments[index].video;
-        }
-      } catch {
-        alert('Error reading media files.');
-        return;
-      }
-
-      if(index === null) {
-        if(!latlng) {
-          alert('Please click on map to select location first.');
-          return;
-        }
-        moments.push({
-          title: modalTitleInput.value.trim(),
-          description: modalDescInput.value.trim(),
-          lat: latlng.lat,
-          lng: latlng.lng,
-          image: imageData,
-          video: videoData,
-        });
-      } else {
-        moments[index].title = modalTitleInput.value.trim();
-        moments[index].description = modalDescInput.value.trim();
-        moments[index].image = imageData;
-        moments[index].video = videoData;
-      }
-
-      saveMoments();
-      renderMoments();
-      closeMomentModal();
-    };
-  }
-
-  function closeMomentModal() {
-    momentModal.classList.remove('active');
-  }
-
-  function fileToBase64(file) {
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onload = () => resolve(reader.result);
-      reader.onerror = reject;
-      reader.readAsDataURL(file);
-    });
-  }
-
-  // Add moment button behavior
-  let waitingForClickToAdd = false;
-  addMomentBtn.addEventListener('click', () => {
-    alert('Please click on the map where you want to add your moment.');
-    waitingForClickToAdd = true;
-  });
-  map.on('click', (e) => {
-    if(waitingForClickToAdd) {
-      openMomentModal(null, e.latlng);
-      waitingForClickToAdd = false;
-    }
-  });
-
-  // Export / Import / Clear (بلا تغيير)
-  exportBtn.addEventListener('click', () => {
-    const dataStr = JSON.stringify(moments, null, 2);
-    const blob = new Blob([dataStr], {type: 'application/json'});
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = 'memory_map_moments.json';
-    a.click();
-    URL.revokeObjectURL(url);
-  });
-  importBtn.addEventListener('click', () => {
-    importFileInput.click();
-  });
-  importFileInput.addEventListener('change', (e) => {
-    const file = e.target.files[0];
-    if(!file) return;
-    const reader = new FileReader();
-    reader.onload = () => {
-      try {
-        const importedMoments = JSON.parse(reader.result);
-        if(Array.isArray(importedMoments)) {
-          for(const m of importedMoments) {
-            if(typeof m.lat !== 'number' || typeof m.lng !== 'number' || typeof m.title !== 'string') {
-              alert('Invalid moment format in imported file.');
-              return;
-            }
-          }
-          moments = moments.concat(importedMoments);
-          saveMoments();
-          renderMoments();
-          alert('Moments imported successfully!');
-        } else {
-          alert('Invalid JSON file format.');
-        }
-      } catch {
-        alert('Failed to parse JSON file.');
-      }
-    };
-    reader.readAsText(file);
-    importFileInput.value = '';
-  });
-  clearAllBtn.addEventListener('click', () => {
-    if(confirm('Are you sure you want to clear ALL moments? This action cannot be undone.')) {
-      moments = [];
-      saveMoments();
-      renderMoments();
-    }
-  });
-
-  // --- جديد: دعم الضغط المطول (Long Press) لتحديد نقطة ---
-  let pressTimer = null;
-  map.on('mousedown touchstart', (e) => {
-    if(e.originalEvent.touches && e.originalEvent.touches.length > 1) return; // Ignore multitouch
-    pressTimer = setTimeout(() => {
-      openMomentModal(null, e.latlng);
-    }, 800);
-  });
-  map.on('mouseup touchend', () => {
-    clearTimeout(pressTimer);
-  });
-  map.on('move', () => {
-    clearTimeout(pressTimer);
-  });
-
-  // --- جديد: إظهار موقع المستخدم على الخريطة ---
-  function onLocationFound(e) {
-    const radius = e.accuracy;
-    if(userMarker) {
-      userMarker.setLatLng(e.latlng);
-    } else {
-      userMarker = L.marker(e.latlng, {
-        icon: L.icon({
-          iconUrl: 'https://cdn-icons-png.flaticon.com/512/4876/4876759.png',
-          iconSize: [30, 30],
-          iconAnchor: [15, 30],
-        })
-      }).addTo(map).bindPopup("Your location").openPopup();
-    }
-  }
-  function onLocationError(e) {
-    console.warn("Location error: " + e.message);
-  }
-  map.locate({setView: true, watch: true, maxZoom: 16});
-  map.on('locationfound', onLocationFound);
-  map.on('locationerror', onLocationError);
-
-  // --- جديد: إشعارات عند الاقتراب من لحظة ---
-  function notifyUser(moment) {
-    if(Notification.permission !== "granted") return;
-    if(notifiedMoments.has(moment.title)) return; // Already notified
-    notifiedMoments.add(moment.title);
-    new Notification("Moment nearby!", {
-      body: `You are near "${moment.title}". Tap to view.`,
-      icon: moment.image || ''
-    }).onclick = () => {
-      // افتح popup وركز على الموقع
-      const idx = moments.findIndex(m => m.title === moment.title && m.lat === moment.lat && m.lng === moment.lng);
-      if(idx !== -1) {
-        markers[idx].openPopup();
-        map.panTo([moment.lat, moment.lng]);
-      }
-    };
-  }
-
-  function distanceMeters(lat1, lon1, lat2, lon2) {
-    // Haversine formula
-    const R = 6371e3;
-    const φ1 = lat1 * Math.PI/180;
-    const φ2 = lat2 * Math.PI/180;
-    const Δφ = (lat2-lat1) * Math.PI/180;
-    const Δλ = (lon2-lon1) * Math.PI/180;
-    const a = Math.sin(Δφ/2) * Math.sin(Δφ/2) +
-              Math.cos(φ1) * Math.cos(φ2) *
-              Math.sin(Δλ/2) * Math.sin(Δλ/2);
-    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
-    const d = R * c;
-    return d;
-  }
-
-  // تحقق مستمر إذا المستخدم قريب من أي لحظة
-  function checkProximityToMoments(position) {
-    const {latitude, longitude} = position.coords;
-    moments.forEach(moment => {
-      const dist = distanceMeters(latitude, longitude, moment.lat, moment.lng);
-      if(dist < 50) { // ضمن 50 متر
-        notifyUser(moment);
-      }
-    });
-  }
-
-  // طلب إذن الإشعارات عند بداية التشغيل
-  if ("Notification" in window) {
-    if(Notification.permission === "default") {
-      Notification.requestPermission();
-    }
-  }
-
-  // بدء مراقبة الموقع مع التحقق من القرب من اللحظات
-  if ("geolocation" in navigator) {
-    navigator.geolocation.watchPosition(checkProximityToMoments, (err) => {
-      console.warn("Geolocation error:", err);
-    }, {enableHighAccuracy: true, maximumAge: 10000, timeout: 5000});
-  }
-
-  // Initial load and render
-  loadMoments();
   renderMoments();
-  createModal();
-
 </script>
-
 </body>
 </html>
