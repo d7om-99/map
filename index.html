@@ -1,550 +1,534 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Memory Map - Interactive Moments & Challenges</title>
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-<style>
-  html, body {
-    height: 100%;
-    margin: 0; padding: 0;
-  }
-  body {
-    font-family: Arial, sans-serif;
-    background: #121212;
-    color: #eee;
-    display: flex;
-    flex-direction: column;
-    height: 100vh;
-  }
-  header {
-    background: #009688;
-    padding: 15px;
-    font-size: 1.5rem;
-    font-weight: bold;
-    text-align: center;
-  }
-  #container {
-    flex: 1;
-    display: flex;
-    overflow: hidden;
-  }
-  #map {
-    flex: 2;
-    height: 100%;
-  }
-  #sidePanel {
-    flex: 1;
-    background: #222;
-    padding: 15px;
-    box-sizing: border-box;
-    overflow-y: auto;
-    display: flex;
-    flex-direction: column;
-  }
-  #sidePanel h2 {
-    margin-top: 0;
-    margin-bottom: 10px;
-    color: #00bfa5;
-    text-align: center;
-  }
-  #searchBar {
-    margin-bottom: 10px;
-    padding: 6px 8px;
-    border-radius: 6px;
-    border: none;
-    width: 100%;
-    background: #333;
-    color: #eee;
-  }
-  #momentsList, #challengesList {
-    list-style: none;
-    padding: 0;
-    margin: 0 0 15px 0;
-    flex-grow: 1;
-    overflow-y: auto;
-  }
-  #momentsList li, #challengesList li {
-    background: #333;
-    margin-bottom: 10px;
-    padding: 10px;
-    border-radius: 8px;
-    cursor: pointer;
-    display: flex;
-    flex-direction: column;
-  }
-  .moment-title, .challenge-title {
-    font-weight: bold;
-  }
-  .moment-meta, .challenge-meta {
-    font-size: 0.85rem;
-    color: #bbb;
-    margin: 5px 0;
-  }
-  .moment-date, .challenge-date {
-    font-size: 0.75rem;
-    color: #888;
-  }
-  .moment-actions, .challenge-actions {
-    display: flex;
-    gap: 5px;
-    flex-wrap: wrap;
-    margin-top: 8px;
-  }
-  .btn-small {
-    background: #00bfa5;
-    border: none;
-    border-radius: 6px;
-    padding: 4px 6px;
-    color: #000;
-    font-weight: bold;
-    cursor: pointer;
-    font-size: 0.85rem;
-  }
-  .btn-small:hover {
-    background: #008f7a;
-  }
-  #momentForm, #challengeForm {
-    display: none;
-    flex-direction: column;
-    background: #333;
-    padding: 15px;
-    border-radius: 8px;
-    margin-top: 10px;
-  }
-  #momentForm input, #momentForm textarea,
-  #challengeForm input, #challengeForm textarea {
-    margin-bottom: 10px;
-    padding: 8px;
-    border-radius: 6px;
-    border: none;
-    width: 100%;
-    color: #eee;
-    background: #555;
-  }
-  #momentForm input::placeholder, #momentForm textarea::placeholder,
-  #challengeForm input::placeholder, #challengeForm textarea::placeholder {
-    color: #ccc;
-  }
-  .moment-media img, .moment-media video {
-    max-width: 100%;
-    max-height: 150px;
-    border-radius: 8px;
-    margin-top: 5px;
-  }
-  .moment-comments, .challenge-comments {
-    margin-top: 10px;
-    font-size: 0.85rem;
-    color: #ccc;
-  }
-  .comment-date {
-    font-size: 0.7rem;
-    color: #666;
-  }
-  #tabs {
-    display: flex;
-    margin-bottom: 10px;
-  }
-  #tabs button {
-    flex: 1;
-    padding: 8px;
-    background: #444;
-    border: none;
-    color: #eee;
-    cursor: pointer;
-    font-weight: bold;
-    border-radius: 6px 6px 0 0;
-  }
-  #tabs button.active {
-    background: #00bfa5;
-    color: #000;
-  }
-  #contentMoments, #contentChallenges {
-    flex-grow: 1;
-    overflow-y: auto;
-  }
-</style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>imhere - Abdulrahman Banat</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <style>
+    * { box-sizing: border-box; }
+    html, body {
+      height: 100%; margin: 0;
+      font-family: 'Segoe UI', sans-serif;
+      background-color: #121212;
+      color: #fff;
+    }
+    #container {
+      display: flex; height: 100vh;
+    }
+    #map { flex: 1; z-index: 1; }
+
+    #sidePanel {
+      width: 380px;
+      background: #1e1e1e;
+      display: flex;
+      flex-direction: column;
+      border-left: 2px solid #00bfa5;
+    }
+    #tabs {
+      display: flex;
+      border-bottom: 1px solid #333;
+    }
+    .tab-btn {
+      flex: 1;
+      padding: 12px;
+      background: transparent;
+      border: none;
+      color: #aaa;
+      font-weight: bold;
+      cursor: pointer;
+    }
+    .tab-btn.active {
+      color: #00bfa5;
+      border-bottom: 2px solid #00bfa5;
+    }
+    .tab-content {
+      display: none;
+      flex: 1;
+      overflow-y: auto;
+      padding: 12px;
+    }
+    .tab-content.active { display: block; }
+
+    form input, form textarea, form button, .searchBox {
+      width: 100%; padding: 10px; margin: 8px 0;
+      border: none; border-radius: 6px;
+      background: #2a2a2a;
+      color: #fff;
+    }
+    form button {
+      background-color: #00bfa5;
+      color: #000;
+      font-weight: bold;
+      cursor: pointer;
+    }
+    ul { list-style: none; padding: 0; margin: 0; }
+    li {
+      background: #2c2c2c;
+      padding: 12px;
+      margin-bottom: 10px;
+      border-radius: 8px;
+      cursor: pointer;
+    }
+    li:hover {
+      background: #383838;
+    }
+    .media-preview {
+      margin-top: 8px;
+      max-width: 100%;
+      border-radius: 6px;
+      max-height: 180px;
+      object-fit: contain;
+    }
+    #bottomBar {
+      text-align: center;
+      background: #00bfa5;
+      color: #000;
+      padding: 10px;
+      font-weight: bold;
+    }
+    #challengeDetails, #participationForm, #winnerSelection {
+      margin-top: 15px;
+      background: #222;
+      padding: 10px;
+      border-radius: 6px;
+    }
+    #participationForm, #winnerSelection {
+      display: none;
+    }
+    #participationList div {
+      margin-bottom: 8px;
+      border-bottom: 1px solid #444;
+      padding-bottom: 5px;
+    }
+  </style>
 </head>
 <body>
-<header>Memory Map - Interactive Moments & Challenges</header>
-<div id="container">
-  <div id="map"></div>
-  <aside id="sidePanel">
-    <div id="tabs">
-      <button id="tabMoments" class="active" onclick="showTab('moments')">Moments</button>
-      <button id="tabChallenges" onclick="showTab('challenges')">Challenges</button>
-    </div>
-    <input id="searchBar" type="text" placeholder="Search by title, date, or series (YYYY-MM-DD)" oninput="searchAll()" />
-    
-    <div id="contentMoments">
-      <button onclick="showRandomMoment()" class="btn-small">🔀 Random Moment</button>
-      <button onclick="showDailyChallenge()" class="btn-small">📅 Daily Challenge</button>
-      <ul id="momentsList"></ul>
-      <form id="momentForm">
-        <input type="text" id="title" placeholder="Title" required autocomplete="off"/>
-        <textarea id="description" placeholder="Description" autocomplete="off"></textarea>
-        <input type="text" id="series" placeholder="Series (optional)" autocomplete="off" />
-        <input type="file" id="media" accept="image/*,video/*" multiple />
-        <button type="submit" class="btn-small">Save Moment</button>
-      </form>
-    </div>
+  <div id="container">
+    <div id="map"></div>
+    <aside id="sidePanel">
+      <div id="tabs">
+        <button class="tab-btn active" data-tab="momentsTab">Moments</button>
+        <button class="tab-btn" data-tab="challengesTab">Challenges</button>
+        <button class="tab-btn" data-tab="addTab">+ Add</button>
+      </div>
 
-    <div id="contentChallenges" style="display:none;">
-      <button onclick="showRandomChallenge()" class="btn-small">🔀 Random Challenge</button>
-      <button onclick="addChallengeForm()" class="btn-small">➕ Add Challenge</button>
-      <ul id="challengesList"></ul>
-      <form id="challengeForm">
-        <input type="text" id="challengeTitle" placeholder="Challenge Title" required autocomplete="off"/>
-        <textarea id="challengeDescription" placeholder="Challenge Description" autocomplete="off"></textarea>
-        <input type="text" id="challengeLocation" placeholder="Location Name (optional)" autocomplete="off" />
-        <input type="file" id="challengeMedia" accept="image/*,video/*" multiple />
-        <button type="submit" class="btn-small">Save Challenge</button>
-      </form>
-    </div>
-  </aside>
-</div>
+      <div class="tab-content active" id="momentsTab">
+        <input class="searchBox" id="searchMoments" placeholder="Search moments" />
+        <ul id="momentsList"></ul>
+      </div>
 
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-<script>
-  // الخريطة والإعدادات
-  const map = L.map('map').setView([21.3891, 39.8579], 13);
-  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-    maxZoom: 19,
-    attribution: '© OpenStreetMap contributors'
-  }).addTo(map);
+      <div class="tab-content" id="challengesTab">
+        <input class="searchBox" id="searchChallenges" placeholder="Search challenges" />
+        <ul id="challengesList"></ul>
+        <div id="challengeDetails"></div>
+        <div id="participationForm">
+          <h4>Participate in Challenge</h4>
+          <textarea id="participationComment" placeholder="Your comment or message"></textarea>
+          <input type="file" id="participationMedia" accept="image/*,video/*" />
+          <button id="submitParticipationBtn">Submit Participation</button>
+        </div>
+        <div id="winnerSelection">
+          <h4>Select Top 3 Winners</h4>
+          <div id="participationList"></div>
+          <button id="saveWinnersBtn">Save Winners & Update Points</button>
+        </div>
+      </div>
 
-  // بيانات
-  let moments = JSON.parse(localStorage.getItem('memoryMapMoments') || '[]');
-  let challenges = JSON.parse(localStorage.getItem('memoryMapChallenges') || '[]');
-  let markers = [];
-  let tempLatLng = null;
-  let tempChallengeLatLng = null;
+      <div class="tab-content" id="addTab">
+        <h3>Add Moment</h3>
+        <form id="momentForm">
+          <input type="text" id="momentTitle" placeholder="Title" required />
+          <textarea id="momentDescription" placeholder="Description" required></textarea>
+          <input type="file" id="momentMedia" accept="image/*,video/*" />
+          <button type="submit">Save Moment</button>
+        </form>
+        <h3>Create Challenge</h3>
+        <form id="challengeForm">
+          <input type="text" id="challengeTitle" placeholder="Title" required />
+          <textarea id="challengeDescription" placeholder="Description"></textarea>
+          <input type="file" id="challengeMedia" accept="image/*,video/*" />
+          <button type="submit">Create Challenge</button>
+        </form>
+      </div>
+    </aside>
+  </div>
+  <div id="bottomBar">imhere - Abdulrahman Banat</div>
 
-  // إنشاء ماركر ونافذة منبثقة مع عداد المشاهدات
-  function createMarker(item, type = 'moment') {
-    const marker = L.marker([item.lat, item.lng]).addTo(map);
-    let popupContent = `<b>${item.title || item.challengeTitle}</b><br>${item.description || item.challengeDescription || ''}`;
-    if(type === 'moment' && item.series) {
-      popupContent += `<br><small>Series: ${item.series}</small>`;
-    }
-    if(type === 'challenge' && item.location) {
-      popupContent += `<br><small>Location: ${item.location}</small>`;
-    }
-    marker.bindPopup(popupContent);
-    marker.on('click', () => {
-      if(type === 'moment') {
-        item.views = (item.views || 0) + 1;
-        saveMoments();
-        renderMoments();
-      } else if(type === 'challenge') {
-        item.views = (item.views || 0) + 1;
-        saveChallenges();
-        renderChallenges();
-      }
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script type="module">
+    import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+
+    const supabase = createClient(
+      'https://kmkvgaonughwdjaaubmt.supabase.co',
+      'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imtta3ZnYW9udWdod2RqYWF1Ym10Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTEyMTY0NzIsImV4cCI6MjA2Njc5MjQ3Mn0.-1HbKQCrEdVAlQ5XDHwbogX_AQB7m7r1oPj_7GyqeRk'
+    );
+
+    const map = L.map('map').setView([21.3891, 39.8579], 13);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      maxZoom: 19,
+      attribution: '© OpenStreetMap contributors'
+    }).addTo(map);
+
+    let tempLatLng = null;
+    let tempMarker = null;
+    let currentUserId = 1; // مؤقت - لازم تربطه بتسجيل دخولك
+
+    // اختيار موقع بالدبوس على الخريطة بدل التنبيه
+    map.on('dblclick', (e) => {
+      tempLatLng = e.latlng;
+      if (tempMarker) map.removeLayer(tempMarker);
+      tempMarker = L.marker(tempLatLng).addTo(map);
     });
-    markers.push(marker);
-  }
 
-  // تهيئة كل الماركرات
-  function initMarkers() {
-    markers.forEach(m => map.removeLayer(m));
-    markers = [];
-    moments.forEach(m => createMarker(m, 'moment'));
-    challenges.forEach(c => createMarker(c, 'challenge'));
-  }
+    // رفع ملف (صورة/فيديو) للسحابة
+    async function uploadMedia(file) {
+      const ext = file.name.split('.').pop();
+      const fileName = `${Date.now()}.${ext}`;
+      const { data, error } = await supabase.storage.from('media').upload(fileName, file, {
+        cacheControl: '3600',
+        upsert: false
+      });
+      if (error) throw new Error(error.message);
+      return `https://kmkvgaonughwdjaaubmt.supabase.co/storage/v1/object/public/media/${data.path}`;
+    }
 
-  // عرض اللحظات (أو فلتر معين)
-  function renderMoments(filtered = null) {
-    const list = document.getElementById('momentsList');
-    list.innerHTML = '';
-    let data = filtered || moments;
-    data.forEach((moment, i) => {
-      let mediaHtml = '';
-      if (moment.media && moment.media.length) {
-        const media = moment.media[0];
-        if (media.type.startsWith('image/')) {
-          mediaHtml = `<img src="${media.data}" alt="Image" />`;
-        } else if (media.type.startsWith('video/')) {
-          mediaHtml = `<video controls src="${media.data}"></video>`;
+    // حفظ لحظة جديدة
+    async function saveMoment(e) {
+      e.preventDefault();
+      if (!tempLatLng) return alert('Double-click on the map to select a location.');
+      const title = document.getElementById('momentTitle').value;
+      const description = document.getElementById('momentDescription').value;
+      const file = document.getElementById('momentMedia').files[0];
+      let media_url = null;
+      if (file) media_url = await uploadMedia(file);
+
+      const { error } = await supabase.from('moments').insert([{
+        title, description, lat: tempLatLng.lat, lng: tempLatLng.lng, media_url, user_id: currentUserId
+      }]);
+      if (error) return alert('Error saving moment: ' + error.message);
+      e.target.reset();
+      if (tempMarker) {
+        map.removeLayer(tempMarker);
+        tempMarker = null;
+      }
+      tempLatLng = null;
+      await loadMoments();
+      alert('Moment saved successfully!');
+    }
+
+    // حفظ تحدي جديد
+    async function saveChallenge(e) {
+      e.preventDefault();
+      if (!tempLatLng) return alert('Double-click on the map to select a location.');
+      const title = document.getElementById('challengeTitle').value;
+      const description = document.getElementById('challengeDescription').value;
+      const file = document.getElementById('challengeMedia').files[0];
+      let media_url = null;
+      if (file) media_url = await uploadMedia(file);
+
+      const { error } = await supabase.from('challenges').insert([{
+        challenge_title: title, challenge_desc: description, lat: tempLatLng.lat, lng: tempLatLng.lng, media_url, user_id: currentUserId
+      }]);
+      if (error) return alert('Error saving challenge: ' + error.message);
+      e.target.reset();
+      if (tempMarker) {
+        map.removeLayer(tempMarker);
+        tempMarker = null;
+      }
+      tempLatLng = null;
+      await loadChallenges();
+      alert('Challenge created successfully!');
+    }
+
+    // تحميل اللحظات وعرضها بالقائمة مع الدبابيس على الخريطة
+    async function loadMoments() {
+      const { data, error } = await supabase.from('moments').select('*').order('id', { ascending: false });
+      if (error) return alert('Error loading moments: ' + error.message);
+      const list = document.getElementById('momentsList');
+      list.innerHTML = '';
+      data.forEach(m => {
+        const li = document.createElement('li');
+        li.innerHTML = `<b>${m.title}</b><br>${m.description}${m.media_url ? `<br><img src="${m.media_url}" class="media-preview" />` : ''}`;
+        li.onclick = () => map.setView([m.lat, m.lng], 16);
+        list.appendChild(li);
+        L.marker([m.lat, m.lng]).addTo(map).bindPopup(`<b>${m.title}</b><br>${m.description}${m.media_url ? `<br><img src="${m.media_url}" style="max-width:150px;" />` : ''}`);
+      });
+    }
+
+    // تحميل التحديات وعرضها بالقائمة مع دبابيس الخريطة
+    async function loadChallenges() {
+      const { data, error } = await supabase.from('challenges').select('*').order('id', { ascending: false });
+      if (error) return alert('Error loading challenges: ' + error.message);
+      const list = document.getElementById('challengesList');
+      list.innerHTML = '';
+      // نظف أقسام التفاصيل والمشاركة والفائزين
+      clearChallengeDetails();
+
+      data.forEach(c => {
+        const li = document.createElement('li');
+        li.innerHTML = `<b>${c.challenge_title}</b><br>${c.challenge_desc}${c.media_url ? `<br><img src="${c.media_url}" class="media-preview" />` : ''}`;
+        li.onclick = () => selectChallenge(c);
+        list.appendChild(li);
+        L.marker([c.lat, c.lng], { icon: L.icon({ iconUrl: 'https://cdn-icons-png.flaticon.com/512/854/854878.png', iconSize: [30, 30] }) })
+          .addTo(map)
+          .bindPopup(`<b>${c.challenge_title}</b><br>${c.challenge_desc}${c.media_url ? `<br><img src="${c.media_url}" style="max-width:150px;" />` : ''}`);
+      });
+    }
+
+    // مسح محتوى تفاصيل التحدي والمشاركة والفائزين
+    function clearChallengeDetails() {
+      document.getElementById('challengeDetails').innerHTML = '';
+      document.getElementById('participationForm').style.display = 'none';
+      document.getElementById('winnerSelection').style.display = 'none';
+      document.getElementById('participationList').innerHTML = '';
+      selectedChallenge = null;
+      selectedParticipationIds = [];
+      winners = [];
+    }
+
+    // المتغيرات الخاصة بالتحدي المختار والمشاركات والفائزين
+    let selectedChallenge = null;
+    let selectedParticipationIds = [];
+    let winners = [];
+
+    // عرض تفاصيل التحدي، المشاركين، وإظهار نموذج المشاركة واختيار الفائزين (إذا صاحب التحدي هو currentUser)
+    async function selectChallenge(challenge) {
+      clearChallengeDetails();
+      selectedChallenge = challenge;
+
+      const detailsDiv = document.getElementById('challengeDetails');
+      const participations = await loadParticipations(challenge.id);
+      const winnerUsers = await loadWinners(challenge.id);
+
+      // حساب النقاط حسب الفائزين
+      let winnersHtml = '';
+      if (winnerUsers.length) {
+        winnersHtml = `<h4>Top Winners:</h4><ol>`;
+        winnerUsers.forEach((w, i) => {
+          winnersHtml += `<li>${w.user_name} - ${w.points} points</li>`;
+        });
+        winnersHtml += `</ol>`;
+      }
+
+      // تفاصيل التحدي مع المشاركين وعددهم وترتيب الفائزين
+      detailsDiv.innerHTML = `
+        <h3>${challenge.challenge_title}</h3>
+        <p>${challenge.challenge_desc}</p>
+        ${challenge.media_url ? `<img src="${challenge.media_url}" class="media-preview" />` : ''}
+        <p><b>Participants:</b> ${participations.length}</p>
+        ${winnersHtml}
+      `;
+
+      // إظهار نموذج المشاركة للجميع
+      document.getElementById('participationForm').style.display = 'block';
+
+      // فقط منشئ التحدي يستطيع اختيار الفائزين
+      if (challenge.user_id === currentUserId) {
+        document.getElementById('winnerSelection').style.display = 'block';
+        showParticipationListForWinners(participations);
+      }
+
+      // ربط زر المشاركة
+      document.getElementById('submitParticipationBtn').onclick = async () => {
+        await submitParticipation(challenge.id);
+      };
+
+      // ربط زر حفظ الفائزين
+      document.getElementById('saveWinnersBtn').onclick = async () => {
+        await saveWinners(challenge.id);
+      };
+    }
+
+    // تحميل مشاركات تحدي من الجدول participation_challenges
+    async function loadParticipations(challenge_id) {
+      const { data, error } = await supabase
+        .from('challenge_participations')
+        .select('*')
+        .eq('challenge_id', challenge_id)
+        .order('created_at', { ascending: false });
+      if (error) {
+        alert('Error loading participations: ' + error.message);
+        return [];
+      }
+      return data || [];
+    }
+
+    // تحميل معلومات الفائزين
+    async function loadWinners(challenge_id) {
+      const { data, error } = await supabase
+        .from('challenge_winners')
+        .select('*, user:user_id(name)')
+        .eq('challenge_id', challenge_id)
+        .order('position', { ascending: true });
+      if (error) {
+        alert('Error loading winners: ' + error.message);
+        return [];
+      }
+      return data || [];
+    }
+
+    // عرض قائمة المشاركات لاختيار الفائزين
+    function showParticipationListForWinners(participations) {
+      const participationList = document.getElementById('participationList');
+      participationList.innerHTML = '';
+      selectedParticipationIds = [];
+
+      participations.forEach(p => {
+        const div = document.createElement('div');
+        div.innerHTML = `
+          <input type="checkbox" data-id="${p.id}" />
+          <b>${p.comment || '(No comment)'}</b><br>
+          ${p.media_url ? `<img src="${p.media_url}" style="max-width: 100px; border-radius: 4px;" />` : ''}
+          <br><small>${new Date(p.created_at).toLocaleString()}</small>
+        `;
+        participationList.appendChild(div);
+
+        div.querySelector('input').addEventListener('change', e => {
+          const id = Number(e.target.dataset.id);
+          if (e.target.checked) {
+            if (selectedParticipationIds.length < 3) {
+              selectedParticipationIds.push(id);
+            } else {
+              e.target.checked = false;
+              alert('You can only select up to 3 winners.');
+            }
+          } else {
+            selectedParticipationIds = selectedParticipationIds.filter(x => x !== id);
+          }
+        });
+      });
+    }
+
+    // إرسال مشاركة في تحدي مع رفع الوسائط
+    async function submitParticipation(challenge_id) {
+      const comment = document.getElementById('participationComment').value.trim();
+      const file = document.getElementById('participationMedia').files[0];
+      let media_url = null;
+      if (file) {
+        try {
+          media_url = await uploadMedia(file);
+        } catch (e) {
+          alert('Error uploading media: ' + e.message);
+          return;
         }
       }
-      const commentsHtml = moment.comments?.map(c =>
-        `<div>• ${c.text} <span class="comment-date">(${c.date})</span></div>`
-      ).join('') || '';
-      const item = document.createElement('li');
-      item.innerHTML = `
-        <div class="moment-title">${moment.title}</div>
-        <div class="moment-meta">
-          Date: ${moment.date || new Date(moment.createdAt).toLocaleString()}<br>
-          Views: ${moment.views || 0} | Likes: ${moment.likes || 0} | Comments: ${moment.comments?.length || 0}
-        </div>
-        <div class="moment-media">${mediaHtml}</div>
-        <div class="moment-comments">${commentsHtml}</div>
-        <div class="moment-actions">
-          <button class="btn-small" onclick="likeMoment(${moment.id})">Like</button>
-          <button class="btn-small" onclick="commentMoment(${moment.id})">Comment</button>
-          <button class="btn-small" onclick="showSeries('${moment.series}')" ${!moment.series ? 'disabled' : ''}>Show Series</button>
-        </div>
-      `;
-      list.appendChild(item);
-    });
-  }
+      if (!comment && !media_url) {
+        return alert('Please enter a comment or upload media.');
+      }
 
-  // عرض التحديات (أو فلتر معين)
-  function renderChallenges(filtered = null) {
-    const list = document.getElementById('challengesList');
-    list.innerHTML = '';
-    let data = filtered || challenges;
-    data.forEach((challenge, i) => {
-      let mediaHtml = '';
-      if (challenge.media && challenge.media.length) {
-        const media = challenge.media[0];
-        if (media.type.startsWith('image/')) {
-          mediaHtml = `<img src="${media.data}" alt="Image" />`;
-        } else if (media.type.startsWith('video/')) {
-          mediaHtml = `<video controls src="${media.data}"></video>`;
+      const { error } = await supabase.from('challenge_participations').insert([{
+        challenge_id, user_id: currentUserId, comment, media_url
+      }]);
+      if (error) return alert('Error submitting participation: ' + error.message);
+
+      alert('Participation submitted!');
+      document.getElementById('participationComment').value = '';
+      document.getElementById('participationMedia').value = '';
+      await selectChallenge(selectedChallenge); // تحديث البيانات
+    }
+
+    // حفظ الفائزين وتحديث النقاط
+    async function saveWinners(challenge_id) {
+      if (selectedParticipationIds.length === 0) {
+        return alert('Please select at least one winner.');
+      }
+      if (selectedParticipationIds.length > 3) {
+        return alert('You can select up to 3 winners only.');
+      }
+
+      // نقاط الفائزين: 1=100، 2=50، 3=35
+      const pointsMap = [100, 50, 35];
+
+      // حذف الفائزين السابقين لهذا التحدي
+      const { error: delError } = await supabase.from('challenge_winners').delete().eq('challenge_id', challenge_id);
+      if (delError) return alert('Error deleting previous winners: ' + delError.message);
+
+      // إضافة الفائزين الجدد وتحديث النقاط للمستخدمين
+      for (let i = 0; i < selectedParticipationIds.length; i++) {
+        const participation_id = selectedParticipationIds[i];
+        const position = i + 1;
+        const points = pointsMap[i];
+
+        // إضافة الفائز
+        const { error: winErr } = await supabase.from('challenge_winners').insert([{
+          challenge_id, participation_id, position
+        }]);
+        if (winErr) {
+          alert('Error saving winner: ' + winErr.message);
+          return;
+        }
+
+        // تحديث نقاط المستخدم المرتبط بالمشاركة
+        // نحتاج أولًا لجلب user_id للمشاركة
+        const { data: partData, error: partErr } = await supabase.from('challenge_participations').select('user_id').eq('id', participation_id).single();
+        if (partErr) {
+          alert('Error fetching participation user: ' + partErr.message);
+          return;
+        }
+        // جلب النقاط الحالية للمستخدم أو 0
+        const { data: pointsData, error: pointsErr } = await supabase.from('users_points').select('points').eq('user_id', partData.user_id).single();
+        if (pointsErr && pointsErr.code !== 'PGRST116') { // PGRST116: no rows found
+          alert('Error fetching user points: ' + pointsErr.message);
+          return;
+        }
+
+        let newPoints = points;
+        if (pointsData) {
+          newPoints += pointsData.points;
+          // تحديث النقاط
+          const { error: upErr } = await supabase.from('users_points').update({ points: newPoints }).eq('user_id', partData.user_id);
+          if (upErr) {
+            alert('Error updating user points: ' + upErr.message);
+            return;
+          }
+        } else {
+          // إدخال نقاط جديدة للمستخدم
+          const { error: insErr } = await supabase.from('users_points').insert([{ user_id: partData.user_id, points: newPoints }]);
+          if (insErr) {
+            alert('Error inserting user points: ' + insErr.message);
+            return;
+          }
         }
       }
-      const commentsHtml = challenge.comments?.map(c =>
-        `<div>• ${c.text} <span class="comment-date">(${c.date})</span></div>`
-      ).join('') || '';
-      const item = document.createElement('li');
-      item.innerHTML = `
-        <div class="challenge-title">${challenge.challengeTitle}</div>
-        <div class="challenge-meta">
-          Date: ${challenge.date || new Date(challenge.createdAt).toLocaleString()}<br>
-          Views: ${challenge.views || 0} | Likes: ${challenge.likes || 0} | Comments: ${challenge.comments?.length || 0}
-        </div>
-        <div class="challenge-media">${mediaHtml}</div>
-        <div class="challenge-comments">${commentsHtml}</div>
-        <div class="challenge-actions">
-          <button class="btn-small" onclick="likeChallenge(${challenge.id})">Like</button>
-          <button class="btn-small" onclick="commentChallenge(${challenge.id})">Comment</button>
-        </div>
-      `;
-      list.appendChild(item);
-    });
-  }
-
-  // الإعجاب بالذكرى
-  function likeMoment(id) {
-    const moment = moments.find(m => m.id === id);
-    if (!moment) return;
-    moment.likes = (moment.likes || 0) + 1;
-    saveMoments();
-    renderMoments();
-  }
-  // التعليق على الذكرى
-  function commentMoment(id) {
-    const moment = moments.find(m => m.id === id);
-    if (!moment) return;
-    const text = prompt("Write your comment:");
-    if (text) {
-      if (!moment.comments) moment.comments = [];
-      moment.comments.push({ text, date: new Date().toLocaleString() });
-      saveMoments();
-      renderMoments();
-    }
-  }
-
-  // إعجاب بالتحدي
-  function likeChallenge(id) {
-    const challenge = challenges.find(c => c.id === id);
-    if (!challenge) return;
-    challenge.likes = (challenge.likes || 0) + 1;
-    saveChallenges();
-    renderChallenges();
-  }
-  // تعليق على التحدي
-  function commentChallenge(id) {
-    const challenge = challenges.find(c => c.id === id);
-    if (!challenge) return;
-    const text = prompt("Write your comment:");
-    if (text) {
-      if (!challenge.comments) challenge.comments = [];
-      challenge.comments.push({ text, date: new Date().toLocaleString() });
-      saveChallenges();
-      renderChallenges();
-    }
-  }
-
-  // حفظ الذكريات
-  function saveMoments() {
-    localStorage.setItem('memoryMapMoments', JSON.stringify(moments));
-  }
-  // حفظ التحديات
-  function saveChallenges() {
-    localStorage.setItem('memoryMapChallenges', JSON.stringify(challenges));
-  }
-
-  // توليد رقم معرف عشوائي
-  function generateId() {
-    return Math.floor(Math.random() * 1000000);
-  }
-
-  // عرض سلسلة الذكريات
-  function showSeries(seriesName) {
-    if (!seriesName) return;
-    const filtered = moments.filter(m => m.series === seriesName);
-    if (filtered.length === 0) {
-      alert('No moments in this series.');
-      return;
-    }
-    renderMoments(filtered);
-  }
-
-  // البحث في الذكريات والتحديات معًا
-  function searchAll() {
-    const query = document.getElementById('searchBar').value.trim().toLowerCase();
-    if (!query) {
-      renderMoments();
-      renderChallenges();
-      return;
-    }
-    // فلترة الذكريات
-    const filteredMoments = moments.filter(m =>
-      (m.title && m.title.toLowerCase().includes(query)) ||
-      (m.date && m.date.includes(query)) ||
-      (m.series && m.series.toLowerCase().includes(query))
-    );
-    renderMoments(filteredMoments);
-    // فلترة التحديات
-    const filteredChallenges = challenges.filter(c =>
-      (c.challengeTitle && c.challengeTitle.toLowerCase().includes(query)) ||
-      (c.date && c.date.includes(query)) ||
-      (c.location && c.location.toLowerCase().includes(query))
-    );
-    renderChallenges(filteredChallenges);
-  }
-
-  // إظهار ذكرى عشوائية
-  function showRandomMoment() {
-    if (moments.length === 0) return alert('No moments available.');
-    const index = Math.floor(Math.random() * moments.length);
-    const moment = moments[index];
-    map.setView([moment.lat, moment.lng], 15);
-    const marker = markers.find(m => {
-      const latLng = m.getLatLng();
-      return latLng.lat === moment.lat && latLng.lng === moment.lng;
-    });
-    if (marker) marker.openPopup();
-  }
-  // إظهار تحدي عشوائي
-  function showRandomChallenge() {
-    if (challenges.length === 0) return alert('No challenges available.');
-    const index = Math.floor(Math.random() * challenges.length);
-    const challenge = challenges[index];
-    map.setView([challenge.lat, challenge.lng], 15);
-    const marker = markers.find(m => {
-      const latLng = m.getLatLng();
-      return latLng.lat === challenge.lat && latLng.lng === challenge.lng;
-    });
-    if (marker) marker.openPopup();
-  }
-
-  // تحدي يومي يتغير كل 3 أيام
-  const dailyChallenges = [
-    "شارك صورة لمكانك الحالي",
-    "اكتب شعورك تجاه السماء اليوم",
-    "شارك صورة لأشيائك المفضلة",
-    "اكتب قصة قصيرة عن رحلتك الأخيرة",
-    "شارك صورة غروب الشمس",
-    "اكتب عن لحظة لا تُنسى",
-  ];
-  function showDailyChallenge() {
-    const startDate = new Date("2025-01-01");
-    const now = new Date();
-    const diffDays = Math.floor((now - startDate) / (1000*60*60*24));
-    const index = diffDays % dailyChallenges.length;
-    alert("تحدي اللحظة اليوم: " + dailyChallenges[index]);
-  }
-
-  // تبديل التبويبات بين اللحظات والتحديات
-  function showTab(tab) {
-    document.getElementById('contentMoments').style.display = tab === 'moments' ? 'block' : 'none';
-    document.getElementById('contentChallenges').style.display = tab === 'challenges' ? 'block' : 'none';
-    document.getElementById('tabMoments').classList.toggle('active', tab === 'moments');
-    document.getElementById('tabChallenges').classList.toggle('active', tab === 'challenges');
-    searchAll();
-  }
-
-  // فورم إضافة تحدي جديد
-  function addChallengeForm() {
-    const form = document.getElementById('challengeForm');
-    form.style.display = form.style.display === 'flex' ? 'none' : 'flex';
-  }
-
-  // حفظ تحدي جديد
-  document.getElementById('challengeForm').addEventListener('submit', function(e) {
-    e.preventDefault();
-    const title = document.getElementById('challengeTitle').value.trim();
-    if (!title) {
-      alert('Please enter a challenge title.');
-      return;
-    }
-    const description = document.getElementById('challengeDescription').value.trim();
-    const locationName = document.getElementById('challengeLocation').value.trim();
-    const files = document.getElementById('challengeMedia').files;
-
-    if (!tempChallengeLatLng) {
-      alert('Please double-click on the map to choose challenge location.');
-      return;
+      alert('Winners saved and points updated!');
+      await selectChallenge(selectedChallenge); // تحديث العرض
     }
 
-    const readerPromises = Array.from(files).map(file => {
-      return new Promise(resolve => {
-        const reader = new FileReader();
-        reader.onload = () => resolve({ type: file.type, data: reader.result });
-        reader.readAsDataURL(file);
+    // بحث اللحظات
+    document.getElementById('searchMoments').addEventListener('input', e => {
+      const query = e.target.value.toLowerCase();
+      document.querySelectorAll('#momentsList li').forEach(li => {
+        li.style.display = li.textContent.toLowerCase().includes(query) ? '' : 'none';
       });
     });
 
-    Promise.all(readerPromises).then(media => {
-      const newChallenge = {
-        id: generateId(),
-        challengeTitle: title,
-        challengeDescription: description,
-        location: locationName || null,
-        lat: tempChallengeLatLng.lat,
-        lng: tempChallengeLatLng.lng,
-        media,
-        views: 0,
-        likes: 0,
-        comments: [],
-        createdAt: new Date().toISOString(),
-        date: new Date().toLocaleString()
-      };
-      challenges.push(newChallenge);
-      saveChallenges();
-
-      createMarker(newChallenge, 'challenge');
-      renderChallenges();
-
-      this.reset();
-      this.style.display = 'none';
-      tempChallengeLatLng = null;
-      alert('Challenge saved!');
+    // بحث التحديات
+    document.getElementById('searchChallenges').addEventListener('input', e => {
+      const query = e.target.value.toLowerCase();
+      document.querySelectorAll('#challengesList li').forEach(li => {
+        li.style.display = li.textContent.toLowerCase().includes(query) ? '' : 'none';
+      });
     });
-  });
 
-  // عند الضغط المزدوج على الخريطة لتحديد موقع إضافة ذكرى أو تحدي
-  map.on('dblclick', function(e) {
-    if(document.getElementById('contentMoments').style.display === 'block') {
-      tempLatLng = e.latlng;
-      document.getElementById('momentForm').style.display = 'flex';
-    } else {
-      tempChallengeLatLng = e.latlng;
-      alert('Location for new challenge selected. Now fill the challenge form and save.');
-    }
-  });
+    // أزرار التبويبات
+    document.querySelectorAll('.tab-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        const tabId = btn.getAttribute('data-tab');
+        document.querySelectorAll('.tab-content').forEach(tab => tab.classList.remove('active'));
+        document.getElementById(tabId).classList.add('active');
+      });
+    });
 
-  // بدء التطبيق
-  initMarkers();
-  renderMoments();
-  renderChallenges();
-  showTab('moments'); // عرض التبويب الافتراضي
+    document.getElementById('momentForm').addEventListener('submit', saveMoment);
+    document.getElementById('challengeForm').addEventListener('submit', saveChallenge);
 
-</script>
+    // تحميل البيانات عند بدء الصفحة
+    await loadMoments();
+    await loadChallenges();
+
+  </script>
 </body>
 </html>
