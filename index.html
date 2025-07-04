@@ -1,124 +1,226 @@
 <!DOCTYPE html>
-<html lang="ar">
+<html lang="en">
 <head>
 <meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>📍 الخريطة مع Supabase</title>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Moments & Challenges App</title>
 <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
 <style>
-  body, html { margin: 0; padding: 0; height: 100%; direction: rtl; font-family: sans-serif; }
-  #map { height: 100%; width: 100%; }
-  #form-container {
-    position: absolute; top: 10px; right: 10px; background: white;
-    padding: 10px; border-radius: 10px; z-index: 1000; max-width: 250px;
+  html, body {
+    margin: 0; padding: 0; height: 100%; font-family: Arial, sans-serif;
   }
-  button {
-    padding: 6px 12px; margin-top: 5px;
-    background: #007bff; color: white; border: none; border-radius: 6px; cursor: pointer;
+  #nav {
+    background: #007bff; padding: 10px; display: flex; gap: 10px;
+  }
+  #nav button {
+    color: white; background: transparent; border: none; cursor: pointer; font-size: 16px;
+    padding: 6px 12px; border-radius: 4px;
+  }
+  #nav button.active { background: #0056b3; }
+  #container > div {
+    display: none; height: calc(100% - 50px); padding: 10px; overflow-y: auto;
+  }
+  #container > div.active { display: block; }
+  #map {
+    height: 60vh;
+    width: 100%;
+    margin-bottom: 10px;
+  }
+  .post-card {
+    border: 1px solid #ddd; padding: 10px; margin-bottom: 10px; border-radius: 6px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+  }
+  .post-card img { max-width: 100%; border-radius: 6px; margin-top: 5px; }
+  #addForm {
+    margin-top: 10px;
+  }
+  label {
+    display: block; margin-top: 10px;
+  }
+  input[type="text"], select, textarea {
+    width: 100%; padding: 6px; margin-top: 4px; border: 1px solid #ccc; border-radius: 4px;
+    box-sizing: border-box;
+  }
+  button.submit-btn {
+    margin-top: 10px; padding: 8px 16px; background: #28a745; border: none; color: white;
+    border-radius: 4px; cursor: pointer;
   }
 </style>
 </head>
 <body>
 
-<div id="map"></div>
+<div id="nav">
+  <button id="btn-map" class="active">Map</button>
+  <button id="btn-challenges">Challenges</button>
+  <button id="btn-trending">Trending</button>
+</div>
 
-<div id="form-container">
-  <h4>➕ إضافة</h4>
-  <form id="upload-form">
-    <input type="text" id="type" placeholder="لحظة أو تحدي" required><br>
-    <input type="text" id="description" placeholder="الوصف" required><br>
-    <input type="file" id="media-file" accept="image/*,video/*" required><br>
-    <button type="submit">نشر</button>
-  </form>
+<div id="container">
+  <div id="page-map" class="active">
+    <div id="map"></div>
+
+    <form id="addForm">
+      <h3>Add New Post</h3>
+      <label for="postType">Type:</label>
+      <select id="postType" required>
+        <option value="memory">Memory</option>
+        <option value="challenge">Challenge</option>
+      </select>
+
+      <label for="description">Description:</label>
+      <textarea id="description" rows="3" required></textarea>
+
+      <label for="imageInput">Image (optional):</label>
+      <input type="file" id="imageInput" accept="image/*" />
+
+      <p id="locationStatus" style="color: green; font-weight: bold;"></p>
+
+      <button type="submit" class="submit-btn">Add Post</button>
+    </form>
+  </div>
+
+  <div id="page-challenges">
+    <h2>Challenges</h2>
+    <div id="challengeList"></div>
+  </div>
+
+  <div id="page-trending">
+    <h2>Trending Posts (Points ≥ 320)</h2>
+    <div id="trendingList"></div>
+  </div>
 </div>
 
 <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js/dist/supabase.min.js"></script>
 
 <script>
-  const supabaseUrl = 'https://kmkvgaonughwdjaaubmt.supabase.co';
-  const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imtta3ZnYW9udWdod2RqYWF1Ym10Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTEyMTY0NzIsImV4cCI6MjA2Njc5MjQ3Mn0.-1HbKQCrEdVAlQ5XDHwbogX_AQB7m7r1oPj_7GyqeRk';
-  const supabaseClient = supabase.createClient(supabaseUrl, supabaseKey);
+// Local storage based demo app
 
-  document.addEventListener('DOMContentLoaded', async () => {
-    const map = L.map('map').setView([21.5, 39.2], 12);
+let posts = JSON.parse(localStorage.getItem('posts') || '[]');
 
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-      maxZoom: 19,
-      attribution: '© OpenStreetMap'
-    }).addTo(map);
+// Navigation
+const navButtons = document.querySelectorAll('#nav button');
+const pages = document.querySelectorAll('#container > div');
 
-    // تحميل البيانات
-    const { data, error } = await supabaseClient.from('moments').select('*');
-    if (error) {
-      console.error(error);
-      alert('⚠️ فشل في تحميل البيانات من Supabase.');
-    } else {
-      data.forEach(item => {
-        if (item.lat && item.lng) {
-          L.marker([item.lat, item.lng])
-            .addTo(map)
-            .bindPopup(`<b>${item.type}</b><br>${item.description}`);
-        }
-      });
-    }
-
-    let selectedLat, selectedLng;
-
-    map.on('click', (e) => {
-      selectedLat = e.latlng.lat;
-      selectedLng = e.latlng.lng;
-      alert(`📍 تم تحديد الموقع: ${selectedLat}, ${selectedLng}`);
-    });
-
-    document.getElementById('upload-form').addEventListener('submit', async (e) => {
-      e.preventDefault();
-      const type = document.getElementById('type').value;
-      const description = document.getElementById('description').value;
-      const file = document.getElementById('media-file').files[0];
-
-      if (!selectedLat || !selectedLng) {
-        alert('يرجى تحديد موقع على الخريطة أولًا بالنقر عليها.');
-        return;
-      }
-
-      if (!file) {
-        alert('يرجى إرفاق صورة أو فيديو.');
-        return;
-      }
-
-      const filePath = `uploads/${Date.now()}_${file.name}`;
-
-      const { error: uploadError } = await supabaseClient.storage.from('media').upload(filePath, file);
-
-      if (uploadError) {
-        console.error(uploadError);
-        alert('⚠️ فشل في رفع الملف.');
-        return;
-      }
-
-      const { data: urlData } = supabaseClient.storage.from('media').getPublicUrl(filePath);
-      const publicURL = urlData.publicUrl;
-
-      const { error: insertError } = await supabaseClient.from('moments').insert([
-        {
-          type,
-          description,
-          media_url: publicURL,
-          lat: selectedLat,
-          lng: selectedLng
-        }
-      ]);
-
-      if (insertError) {
-        console.error(insertError);
-        alert('⚠️ فشل في إضافة المنشور.');
-      } else {
-        alert('✅ تم إضافة المنشور بنجاح.');
-        location.reload();
-      }
-    });
+navButtons.forEach((btn, idx) => {
+  btn.addEventListener('click', () => {
+    navButtons.forEach(b => b.classList.remove('active'));
+    pages.forEach(p => p.classList.remove('active'));
+    btn.classList.add('active');
+    pages[idx].classList.add('active');
+    if (btn.id === 'btn-challenges') loadChallenges();
+    else if (btn.id === 'btn-trending') loadTrending();
   });
+});
+
+// Map setup
+const map = L.map('map').setView([21.5, 39.2], 6);
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+  maxZoom: 19,
+  attribution: '© OpenStreetMap contributors'
+}).addTo(map);
+
+let marker;
+let selectedLatLng = null;
+const locationStatus = document.getElementById('locationStatus');
+
+map.on('dblclick', function(e) {
+  selectedLatLng = e.latlng;
+  locationStatus.textContent = `Selected Location: ${selectedLatLng.lat.toFixed(5)}, ${selectedLatLng.lng.toFixed(5)}`;
+  if(marker) map.removeLayer(marker);
+  marker = L.marker(selectedLatLng).addTo(map);
+});
+
+// Load posts on map
+function loadPostsOnMap() {
+  posts.forEach(post => {
+    if(post.lat && post.lng){
+      L.marker([post.lat, post.lng])
+        .addTo(map)
+        .bindPopup(`<b>${post.type === 'memory' ? 'Memory' : 'Challenge'}</b><br>${post.description}<br>Points: ${post.points || 0}`);
+    }
+  });
+}
+loadPostsOnMap();
+
+// Add new post form handler
+const addForm = document.getElementById('addForm');
+addForm.addEventListener('submit', (e) => {
+  e.preventDefault();
+  if(!selectedLatLng) {
+    alert('Please double-click on the map to select a location first.');
+    return;
+  }
+  const type = document.getElementById('postType').value;
+  const description = document.getElementById('description').value.trim();
+  const fileInput = document.getElementById('imageInput');
+  const file = fileInput.files[0];
+
+  if(file) {
+    const reader = new FileReader();
+    reader.onload = function(evt) {
+      savePost(type, description, evt.target.result);
+    };
+    reader.readAsDataURL(file);
+  } else {
+    savePost(type, description, null);
+  }
+});
+
+function savePost(type, description, imgData) {
+  const newPost = {
+    id: Date.now(),
+    type,
+    description,
+    lat: selectedLatLng.lat,
+    lng: selectedLatLng.lng,
+    image: imgData,
+    points: 0
+  };
+  posts.push(newPost);
+  localStorage.setItem('posts', JSON.stringify(posts));
+  alert('Post added successfully!');
+  location.reload();
+}
+
+// Challenges page
+function loadChallenges() {
+  const container = document.getElementById('challengeList');
+  container.innerHTML = '';
+  const challenges = posts.filter(p => p.type === 'challenge');
+  if(challenges.length === 0) container.textContent = 'No challenges added yet.';
+  challenges.forEach(ch => {
+    const div = document.createElement('div');
+    div.className = 'post-card';
+    div.innerHTML = `
+      <strong>Challenge</strong><br>
+      ${ch.description}<br>
+      Location: (${ch.lat.toFixed(3)}, ${ch.lng.toFixed(3)})<br>
+      Points: ${ch.points || 0}
+      ${ch.image ? `<br><img src="${ch.image}">` : ''}
+    `;
+    container.appendChild(div);
+  });
+}
+
+// Trending page
+function loadTrending() {
+  const container = document.getElementById('trendingList');
+  container.innerHTML = '';
+  const trendingPosts = posts.filter(p => (p.points || 0) >= 320);
+  if(trendingPosts.length === 0) container.textContent = 'No trending posts yet.';
+  trendingPosts.forEach(p => {
+    const div = document.createElement('div');
+    div.className = 'post-card';
+    div.innerHTML = `
+      <strong>${p.type === 'memory' ? 'Memory' : 'Challenge'}</strong><br>
+      ${p.description}<br>
+      Location: (${p.lat.toFixed(3)}, ${p.lng.toFixed(3)})<br>
+      Points: ${p.points || 0}
+      ${p.image ? `<br><img src="${p.image}">` : ''}
+    `;
+    container.appendChild(div);
+  });
+}
 </script>
 
 </body>
