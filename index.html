@@ -52,19 +52,14 @@
     }
     marker = L.marker([lat, lng]).addTo(map);
 
-    document.getElementById('coordsDisplay').textContent = `الموقع المحدد: خط عرض ${lat}, خط طول ${lng}`;
+    document.getElementById('coordsDisplay').textContent = `📍 الموقع المحدد: خط عرض ${lat}, خط طول ${lng}`;
     document.getElementById('sendBtn').disabled = false;
   });
 
   document.getElementById('sendBtn').addEventListener('click', function() {
     if (!selectedCoords) return;
-
-    // في Kodular: يتم استقبال البيانات عبر WebViewString
-    // هنا نرسل الإحداثيات
-    window.Android.postMessage(JSON.stringify(selectedCoords));
-
-    // أو (إذا ما صار عندك Android object، جرب استخدام هذا بدلاً منه)
-    // window.parent.postMessage(JSON.stringify(selectedCoords), '*');
+    window.AppInventor.setWebViewString(JSON.stringify(selectedCoords));
+    alert("✅ تم إرسال الإحداثيات إلى التطبيق");
   });
 </script>
 
