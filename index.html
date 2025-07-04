@@ -2,128 +2,69 @@
 <html lang="ar">
 <head>
 <meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>📍 الخريطة مع Supabase</title>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>خريطة واختيار موقع</title>
 <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
 <style>
-  body, html { margin: 0; padding: 0; height: 100%; direction: rtl; font-family: sans-serif; }
-  #map { height: 100%; width: 100%; }
-  #form-container {
-    position: absolute; top: 10px; right: 10px; background: white;
-    padding: 10px; border-radius: 10px; z-index: 1000; max-width: 250px;
+  html, body { height: 100%; margin: 0; padding: 0; }
+  #map { height: 90vh; width: 100%; }
+  #sendBtn {
+    width: 100%;
+    height: 40px;
+    background-color: #007bff;
+    color: white;
+    font-size: 18px;
+    border: none;
+    cursor: pointer;
   }
-  button {
-    padding: 6px 12px; margin-top: 5px;
-    background: #007bff; color: white; border: none; border-radius: 6px; cursor: pointer;
+  #coordsDisplay {
+    padding: 8px;
+    text-align: center;
+    font-weight: bold;
   }
 </style>
 </head>
 <body>
 
 <div id="map"></div>
-
-<div id="form-container">
-  <h4>➕ إضافة</h4>
-  <form id="upload-form">
-    <input type="text" id="type" placeholder="لحظة أو تحدي" required><br>
-    <input type="text" id="description" placeholder="الوصف" required><br>
-    <input type="file" id="media-file" accept="image/*,video/*" required><br>
-    <button type="submit">نشر</button>
-  </form>
-</div>
+<div id="coordsDisplay">انقر على الخريطة لتحديد الموقع</div>
+<button id="sendBtn" disabled>أرسل الإحداثيات</button>
 
 <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js/dist/supabase.min.js"></script>
-
 <script>
-  const supabaseUrl = 'https://kmkvgaonughwdjaaubmt.supabase.co';
-  const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imtta3ZnYW9udWdod2RqYWF1Ym10Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTEyMTY0NzIsImV4cCI6MjA2Njc5MjQ3Mn0.-1HbKQCrEdVAlQ5XDHwbogX_AQB7m7r1oPj_7GyqeRk';
-  const supabaseClient = supabase.createClient(supabaseUrl, supabaseKey);
+  const map = L.map('map').setView([24.7, 46.7], 6);
 
-  document.addEventListener('DOMContentLoaded', async () => {
-    const map = L.map('map').setView([21.5, 39.2], 12);
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    maxZoom: 19,
+    attribution: '© OpenStreetMap contributors'
+  }).addTo(map);
 
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-      maxZoom: 19,
-      attribution: '© OpenStreetMap'
-    }).addTo(map);
+  let marker = null;
+  let selectedCoords = null;
 
-    // تحميل البيانات
-    const { data, error } = await supabaseClient.from('moments').select('*');
-    if (error) {
-      console.error(error);
-      alert('⚠️ فشل في تحميل البيانات من Supabase.');
-    } else {
-      data.forEach(item => {
-        if (item.lat && item.lng) {
-          L.marker([item.lat, item.lng])
-            .addTo(map)
-            .bindPopup(`<b>${item.type}</b><br>${item.description}`);
-        }
-      });
+  map.on('click', function(e) {
+    const lat = e.latlng.lat.toFixed(6);
+    const lng = e.latlng.lng.toFixed(6);
+    selectedCoords = { lat, lng };
+
+    if (marker) {
+      map.removeLayer(marker);
     }
+    marker = L.marker([lat, lng]).addTo(map);
 
-    let selectedLat, selectedLng;
+    document.getElementById('coordsDisplay').textContent = `الموقع المحدد: خط عرض ${lat}, خط طول ${lng}`;
+    document.getElementById('sendBtn').disabled = false;
+  });
 
-    map.on('click', (e) => {
-      selectedLat = e.latlng.lat;
-      selectedLng = e.latlng.lng;
-      alert(`📍 تم تحديد الموقع: ${selectedLat}, ${selectedLng}`);
-    });
+  document.getElementById('sendBtn').addEventListener('click', function() {
+    if (!selectedCoords) return;
 
-    document.getElementById('upload-form').addEventListener('submit', async (e) => {
-      e.preventDefault();
-      const type = document.getElementById('type').value;
-      const description = document.getElementById('description').value;
-      const file = document.getElementById('media-file').files[0];
+    // في Kodular: يتم استقبال البيانات عبر WebViewString
+    // هنا نرسل الإحداثيات
+    window.Android.postMessage(JSON.stringify(selectedCoords));
 
-      if (!selectedLat || !selectedLng) {
-        alert('يرجى تحديد موقع على الخريطة أولًا بالنقر عليها.');
-        return;
-      }
-
-      if (!file) {
-        alert('يرجى إرفاق صورة أو فيديو.');
-        return;
-      }
-
-      const filePath = `uploads/${Date.now()}_${file.name}`;
-
-      const { error: uploadError } = await supabaseClient.storage.from('media').upload(filePath, file);
-
-      if (uploadError) {
-        console.error(uploadError);
-        alert('⚠️ فشل في رفع الملف.');
-        return;
-      }
-
-      // الحصول على رابط عام للملف
-      const { data: urlData, error: urlError } = supabaseClient.storage.from('media').getPublicUrl(filePath);
-      if (urlError) {
-        console.error(urlError);
-        alert('⚠️ فشل في الحصول على رابط الملف.');
-        return;
-      }
-      const publicURL = urlData.publicUrl;
-
-      const { error: insertError } = await supabaseClient.from('moments').insert([
-        {
-          type,
-          description,
-          media_url: publicURL,
-          lat: selectedLat,
-          lng: selectedLng
-        }
-      ]);
-
-      if (insertError) {
-        console.error(insertError);
-        alert('⚠️ فشل في إضافة المنشور.');
-      } else {
-        alert('✅ تم إضافة المنشور بنجاح.');
-        location.reload();
-      }
-    });
+    // أو (إذا ما صار عندك Android object، جرب استخدام هذا بدلاً منه)
+    // window.parent.postMessage(JSON.stringify(selectedCoords), '*');
   });
 </script>
 
