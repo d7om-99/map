@@ -58,7 +58,13 @@
 
   document.getElementById('sendBtn').addEventListener('click', function() {
     if (!selectedCoords) return;
-    window.AppInventor.setWebViewString(JSON.stringify(selectedCoords));
+
+    // إرسال البيانات بتنسيق lat|lng لتسهيل استقبالها على Kodular بدون JSONUtils
+    const coordString = `${selectedCoords.lat}|${selectedCoords.lng}`;
+
+    // Kodular WebViewer استقبال
+    window.AppInventor.setWebViewString(coordString);
+
     alert("✅ تم إرسال الإحداثيات إلى التطبيق");
   });
 </script>
